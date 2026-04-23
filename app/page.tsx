@@ -414,7 +414,7 @@ export default function FishProductCalculatorBasic() {
   };
 
   const unlockTool = () => {
-    const correctPassword = "fish2026";
+    const correctPassword = "danbenny";
     if (passwordInput === correctPassword) {
       setIsUnlocked(true);
       setPasswordError("");
