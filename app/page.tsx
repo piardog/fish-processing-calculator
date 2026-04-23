@@ -445,8 +445,7 @@ export default function FishProductCalculatorBasic() {
           <h1 className="text-2xl font-bold mb-3">Fish Processing Calculator</h1>
           <p className="text-slate-600 mb-2">Enter the password to unlock the tool.</p>
           <div className="mb-4 rounded-lg bg-blue-50 border border-blue-200 p-3 text-sm text-blue-800">
-            This tool is for internal use. If you need access, please contact the site owner.
-          </div>
+“This tool is currently being tested. For access or enquiries, please contact Dan at dan@moonblogger.”          </div>
           <div className="space-y-3">
             <input
               type="password"
