@@ -445,7 +445,8 @@ export default function FishProductCalculatorBasic() {
           <h1 className="text-2xl font-bold mb-3">Fish Processing Calculator</h1>
           <p className="text-slate-600 mb-2">Enter the password to unlock the tool.</p>
           <div className="mb-4 rounded-lg bg-blue-50 border border-blue-200 p-3 text-sm text-blue-800">
-“This tool is currently being tested.<br /> For access or enquiries,<br /> please contact Dan at dan@moonblogger.com.”          </div>
+            This tool is for internal use. If you need access, please contact the site owner.
+          </div>
           <div className="space-y-3">
             <input
               type="password"
@@ -469,9 +470,12 @@ export default function FishProductCalculatorBasic() {
 
       {/* NAVBAR */}
       <div className="bg-white border-b">
-        <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
-          <div className="font-bold text-lg">Fish Processing Calculator</div>
-          <div className="flex gap-4 text-sm items-center">
+        <div className="max-w-6xl mx-auto px-4 py-4 md:px-6">
+          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+            <div className="font-bold text-base sm:text-lg whitespace-nowrap">
+              Fish Processing Calculator
+            </div>
+            <div className="flex flex-wrap gap-x-4 gap-y-2 text-sm items-center">
             <a href="/" className="hover:underline">Home</a>
             <a href="/privacy" className="hover:underline">Privacy</a>
             <a href="/terms" className="hover:underline">Terms</a>
@@ -483,6 +487,7 @@ export default function FishProductCalculatorBasic() {
           </div>
         </div>
       </div>
+    </div>
 
       {/* HERO SECTION */}
       <div className="bg-slate-900 text-white py-12 px-6">
