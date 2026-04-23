@@ -400,16 +400,33 @@ export default function FishProductCalculatorBasic() {
   };
 
   const exportToCsv = () => {
-    if (savedScenarios.length === 0) return;
+    if (savedScenarios.length === 0) {
+      alert("Please save at least one scenario before exporting.");
+      return;
+    }
+
     const headers = ["Species", "Product", "Weight (kg)", "Profit (€)", "Cost / Unit (€)"];
-    const rows = savedScenarios.map((s) => [s.species, s.product, s.weight, s.profit.toFixed(2), s.costPerUnit.toFixed(2)]);
-    const csv = [headers, ...rows].map((row) => row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(",")).join("\r\n");
+    const rows = savedScenarios.map((s) => [
+      s.species,
+      s.product,
+      s.weight,
+      s.profit.toFixed(2),
+      s.costPerUnit.toFixed(2),
+    ]);
+
+    const csv = [headers, ...rows]
+      .map((row) => row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(","))
+      .join("
+");
+
     const blob = new Blob(["﻿" + csv], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
     a.download = "fish-production-report.csv";
+    document.body.appendChild(a);
     a.click();
+    document.body.removeChild(a);
     URL.revokeObjectURL(url);
   };
 
@@ -441,11 +458,13 @@ export default function FishProductCalculatorBasic() {
   if (!isUnlocked && process.env.NODE_ENV !== "development") {
     return (
       <div className="min-h-screen bg-slate-100 flex items-center justify-center p-6">
-        <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
+        <div className="w-full max-w-2xl rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
           <h1 className="text-2xl font-bold mb-3">Fish Processing Calculator</h1>
           <p className="text-slate-600 mb-2">Enter the password to unlock the tool.</p>
-          <div className="mb-4 rounded-lg bg-blue-50 border border-blue-200 p-3 text-sm text-blue-800">
-            This tool is for internal use. If you need access, please contact the site owner.
+          <div className="mb-5 rounded-xl border border-blue-200 bg-blue-50 p-5 text-sm leading-7 text-blue-900 min-h-[200px]">
+            <p>This tool is currently being tested.</p>
+            <p>For access or enquiries,</p>
+            <p>please contact Dan at info@moonblogger.com.</p>
           </div>
           <div className="space-y-3">
             <input
