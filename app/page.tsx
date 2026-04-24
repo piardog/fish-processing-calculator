@@ -170,7 +170,7 @@ export default function FishProductCalculatorBasic() {
 
   const products = [...baseProducts, ...customProducts];
   const productsForSpecies = products.filter((p) => p.species.includes(fishType));
-  const selectedProductData = productsForSpecies.find((p) => p.key === selectedProduct) || null;
+  const selectedProductData = products.find((p) => p.key === selectedProduct) || null;
 
   const [productIngredients, setProductIngredients] = useState<Record<string, Ingredient[]>>({
     breadedFillets: [
