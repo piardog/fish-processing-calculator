@@ -91,9 +91,6 @@ export default function FishProductCalculatorBasic() {
     marinating: 3,
   });
 
-  const [productMachineOverrides, setProductMachineOverrides] = useState<Record<string, string[]>>({});
-  const [newMachineByProduct, setNewMachineByProduct] = useState<Record<string, string>>({});
-
   const baseProducts: Product[] = [
     {
       key: "freshFillets",
@@ -220,6 +217,7 @@ export default function FishProductCalculatorBasic() {
   useEffect(() => {
     const profile = fishProfiles[fishType as keyof typeof fishProfiles];
 
+    // Adjust based on fish size
     let filletAdj = 0;
     let trimAdj = 0;
 
@@ -269,69 +267,6 @@ export default function FishProductCalculatorBasic() {
   const getProductExtraLabourTotal = (productKey: string) =>
     (productExtraLabour[productKey] || []).reduce((sum, item) => sum + item.staff * item.hours * item.rate, 0);
 
-  const getProductMachines = (product: Product) => productMachineOverrides[product.key] || product.machines;
-
-  const updateProductMachine = (product: Product, index: number, value: string) => {
-    const currentMachines = getProductMachines(product);
-    const oldMachine = currentMachines[index];
-    const newMachine = value.trim().toLowerCase();
-
-    const updatedMachines = currentMachines.map((machine, i) => (i === index ? newMachine : machine));
-
-    setProductMachineOverrides((prev) => ({
-      ...prev,
-      [product.key]: updatedMachines,
-    }));
-
-    if (newMachine && oldMachine !== newMachine) {
-      setMachineStaffing((prev) => ({
-        ...prev,
-        [newMachine]: prev[newMachine] ?? prev[oldMachine] ?? 0,
-      }));
-
-      setMachineHours((prev) => ({
-        ...prev,
-        [newMachine]: prev[newMachine] ?? prev[oldMachine] ?? 0,
-      }));
-    }
-  };
-
-  const removeProductMachine = (product: Product, index: number) => {
-    const updatedMachines = getProductMachines(product).filter((_, i) => i !== index);
-
-    setProductMachineOverrides((prev) => ({
-      ...prev,
-      [product.key]: updatedMachines,
-    }));
-  };
-
-  const addProductMachine = (product: Product) => {
-    const draft = (newMachineByProduct[product.key] || "").trim().toLowerCase();
-    if (!draft) return;
-
-    const currentMachines = getProductMachines(product);
-
-    setProductMachineOverrides((prev) => ({
-      ...prev,
-      [product.key]: [...currentMachines, draft],
-    }));
-
-    setMachineStaffing((prev) => ({
-      ...prev,
-      [draft]: prev[draft] ?? 1,
-    }));
-
-    setMachineHours((prev) => ({
-      ...prev,
-      [draft]: prev[draft] ?? 1,
-    }));
-
-    setNewMachineByProduct((prev) => ({
-      ...prev,
-      [product.key]: "",
-    }));
-  };
-
   const getProductUnits = (product: Product) =>
     calcUnits(product.source === "fillet" ? totals.filletKg : totals.trimKg, product.fishPerUnitKg);
 
@@ -340,7 +275,7 @@ export default function FishProductCalculatorBasic() {
   };
 
   const getMachineLabourTotal = (product: Product) => {
-    const base = getProductMachines(product).reduce((sum, machine) => {
+    const base = product.machines.reduce((sum, machine) => {
       const staff = machineStaffing[machine] || 0;
       const hours = machineHours[machine] || 0;
       return sum + staff * hours * hourlyRate;
@@ -858,8 +793,6 @@ export default function FishProductCalculatorBasic() {
 
               <div>
                 <div className="mb-2 text-sm font-semibold">Labour Breakdown</div>
-                <p className="mb-3 text-xs text-slate-500">Default processing steps can be edited or removed for each product.</p>
-
                 <div className="mb-3 grid grid-cols-4 gap-2 items-end">
                   <div>
                     <div className="mb-1 text-xs text-slate-500">Hourly Rate (€)</div>
@@ -874,56 +807,13 @@ export default function FishProductCalculatorBasic() {
                 </div>
 
                 <div className="space-y-2">
-                  {getProductMachines(selectedProductData).map((machine, i) => (
-                    <div key={`${machine}-${i}`} className="grid grid-cols-4 gap-2 items-center">
-                      <input
-                        value={machine}
-                        onChange={(e) => updateProductMachine(selectedProductData, i, e.target.value)}
-                        className={inputClass}
-                        placeholder="Step name"
-                      />
-                      <input
-                        type="number"
-                        value={machineStaffing[machine] || 0}
-                        onChange={(e) => setMachineStaffing((prev) => ({ ...prev, [machine]: Number(e.target.value) || 0 }))}
-                        className={inputClass}
-                        placeholder="Staff"
-                      />
-                      <input
-                        type="number"
-                        value={machineHours[machine] || 0}
-                        onChange={(e) => setMachineHours((prev) => ({ ...prev, [machine]: Number(e.target.value) || 0 }))}
-                        className={inputClass}
-                        placeholder="Hours"
-                      />
-                      <button
-                        onClick={() => removeProductMachine(selectedProductData, i)}
-                        className="rounded bg-red-100 px-3 py-2 text-sm text-red-700"
-                      >
-                        Remove
-                      </button>
+                  {selectedProductData.machines.map((machine) => (
+                    <div key={machine} className="grid grid-cols-3 gap-2 items-center">
+                      <div className="capitalize text-sm text-slate-700">{machine}</div>
+                      <input type="number" value={machineStaffing[machine] || 0} onChange={(e) => setMachineStaffing((prev) => ({ ...prev, [machine]: Number(e.target.value) || 0 }))} className={inputClass} placeholder="Staff" />
+                      <input type="number" value={machineHours[machine] || 0} onChange={(e) => setMachineHours((prev) => ({ ...prev, [machine]: Number(e.target.value) || 0 }))} className={inputClass} placeholder="Hours" />
                     </div>
                   ))}
-                </div>
-
-                <div className="mt-3 grid grid-cols-4 gap-2 items-center">
-                  <input
-                    value={newMachineByProduct[selectedProductData.key] || ""}
-                    onChange={(e) =>
-                      setNewMachineByProduct((prev) => ({
-                        ...prev,
-                        [selectedProductData.key]: e.target.value,
-                      }))
-                    }
-                    className={inputClass}
-                    placeholder="New processing step"
-                  />
-                  <button
-                    onClick={() => addProductMachine(selectedProductData)}
-                    className="rounded bg-slate-700 px-3 py-2 text-sm text-white"
-                  >
-                    + Add Step
-                  </button>
                 </div>
               </div>
 
