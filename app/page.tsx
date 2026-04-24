@@ -47,6 +47,8 @@ export default function FishProductCalculatorBasic() {
   const [fishWeight, setFishWeight] = useState(1000);
   const [filletPct, setFilletPct] = useState(42);
   const [trimPct, setTrimPct] = useState(18);
+  const [wastePct, setWastePct] = useState(40);
+  const [yieldMode, setYieldMode] = useState("typical");
   const [fishCostPerKg, setFishCostPerKg] = useState(4);
   const [fishSize, setFishSize] = useState("medium");
   const [hourlyRate, setHourlyRate] = useState(15);
@@ -220,20 +222,27 @@ export default function FishProductCalculatorBasic() {
     let trimAdj = 0;
 
     if (fishSize === "small") {
-      filletAdj = -5;
-      trimAdj = +5;
+      filletAdj = -3;
+      trimAdj = 0;
     } else if (fishSize === "large") {
-      filletAdj = +5;
-      trimAdj = -5;
+      filletAdj = +3;
+      trimAdj = 0;
     }
 
     setFilletPct(profile.filletPct + filletAdj);
-    setTrimPct(profile.trimPct + trimAdj);
+    if (yieldMode === "typical") {
+      const adjustedFillet = Math.max(0, profile.filletPct + filletAdj);
+      const adjustedTrim = Math.max(0, profile.trimPct + trimAdj);
+      const adjustedWaste = Math.max(0, 100 - adjustedFillet - adjustedTrim);
+      setFilletPct(adjustedFillet);
+      setTrimPct(adjustedTrim);
+      setWastePct(adjustedWaste);
+    }
     setFishCostPerKg(profile.fishCostPerKg);
     if (selectedProduct && !productsForSpecies.some((p) => p.key === selectedProduct)) {
       setSelectedProduct("");
     }
-  }, [fishType, fishSize]);
+  }, [fishType, fishSize, yieldMode]);
 
   const inputClass = "w-full rounded-xl border border-slate-300 px-3 py-2 text-sm outline-none";
   const cardClass = "bg-white rounded-2xl border border-slate-200 p-5 shadow-sm";
@@ -242,8 +251,9 @@ export default function FishProductCalculatorBasic() {
   const totals = useMemo(() => {
     const filletKg = safeFishWeight * (filletPct / 100);
     const trimKg = safeFishWeight * (trimPct / 100);
-    return { filletKg, trimKg };
-  }, [safeFishWeight, filletPct, trimPct]);
+    const wasteKg = safeFishWeight * (wastePct / 100);
+    return { filletKg, trimKg, wasteKg };
+  }, [safeFishWeight, filletPct, trimPct, wastePct]);
 
   const calcUnits = (kg: number, perUnit: number) => Math.floor(kg / perUnit);
   const formatMoney = (v: number) => `€${Number(v || 0).toFixed(2)}`;
@@ -259,6 +269,10 @@ export default function FishProductCalculatorBasic() {
 
   const getProductUnits = (product: Product) =>
     calcUnits(product.source === "fillet" ? totals.filletKg : totals.trimKg, product.fishPerUnitKg);
+
+  const getProductFishCostPerUnit = (product: Product) => {
+    return product.fishPerUnitKg * fishCostPerKg;
+  };
 
   const getMachineLabourTotal = (product: Product) => {
     const base = product.machines.reduce((sum, machine) => {
@@ -276,10 +290,11 @@ export default function FishProductCalculatorBasic() {
   };
 
   const getProductProfitPerUnit = (product: Product) => {
+    const fish = getProductFishCostPerUnit(product);
     const ingredient = getProductIngredientTotal(product.key);
     const other = getProductOtherCostTotal(product.key);
     const labour = getProductLabourCostPerUnit(product);
-    return product.price - ingredient - other - labour;
+    return product.price - fish - ingredient - other - labour;
   };
 
   const updateIngredient = (productKey: string, index: number, field: keyof Ingredient, value: string) => {
@@ -369,6 +384,7 @@ export default function FishProductCalculatorBasic() {
       weight: safeFishWeight,
       profit: getProductProfitPerUnit(selectedProductData) * getProductUnits(selectedProductData),
       costPerUnit:
+        getProductFishCostPerUnit(selectedProductData) +
         getProductIngredientTotal(selectedProductData.key) +
         getProductOtherCostTotal(selectedProductData.key) +
         getProductLabourCostPerUnit(selectedProductData),
@@ -494,18 +510,18 @@ export default function FishProductCalculatorBasic() {
               Fish Processing Calculator
             </div>
             <div className="flex flex-wrap gap-x-4 gap-y-2 text-sm items-center">
-            <a href="/" className="hover:underline">Home</a>
-            <a href="/privacy" className="hover:underline">Privacy</a>
-            <a href="/terms" className="hover:underline">Terms</a>
-            <a href="/disclaimer" className="hover:underline">Disclaimer</a>
-            <a href="/contact" className="hover:underline">Contact</a>
-            {process.env.NODE_ENV !== "development" && (
-              <button onClick={lockTool} className="rounded bg-slate-900 px-3 py-1 text-white hover:bg-slate-700">Lock</button>
-            )}
+              <a href="/" className="hover:underline">Home</a>
+              <a href="/privacy" className="hover:underline">Privacy</a>
+              <a href="/terms" className="hover:underline">Terms</a>
+              <a href="/disclaimer" className="hover:underline">Disclaimer</a>
+              <a href="/contact" className="hover:underline">Contact</a>
+              {process.env.NODE_ENV !== "development" && (
+                <button onClick={lockTool} className="rounded bg-slate-900 px-3 py-1 text-white hover:bg-slate-700">Lock</button>
+              )}
+            </div>
           </div>
         </div>
       </div>
-    </div>
 
       {/* HERO SECTION */}
       <div className="bg-slate-900 text-white py-12 px-6">
@@ -562,7 +578,7 @@ export default function FishProductCalculatorBasic() {
               </select>
             </div>
           </div>
-          <div className="mt-3 grid gap-3 md:grid-cols-2">
+          <div className="mt-3 grid gap-3 md:grid-cols-3">
             <div>
               <div className="mb-1 text-sm">Fish Size</div>
               <select value={fishSize} onChange={(e) => setFishSize(e.target.value)} className={inputClass}>
@@ -575,8 +591,93 @@ export default function FishProductCalculatorBasic() {
               <div className="mb-1 text-sm">Raw Material Weight (kg)</div>
               <input type="number" value={fishWeight} onChange={(e) => setFishWeight(Number(e.target.value) || 0)} className={inputClass} />
             </div>
+            <div>
+              <div className="mb-1 text-sm">Fish Purchase Price €/kg</div>
+              <input type="number" value={fishCostPerKg} onChange={(e) => setFishCostPerKg(Number(e.target.value) || 0)} className={inputClass} />
+            </div>
+          </div>
+          <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-4">
+            <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+              <div className="text-sm font-semibold">Yield Settings</div>
+              <div className="flex gap-2 text-sm">
+                <button
+                  onClick={() => setYieldMode("typical")}
+                  className={`rounded px-3 py-2 ${yieldMode === "typical" ? "bg-slate-900 text-white" : "bg-white border"}`}
+                >
+                  Use Typical Yields
+                </button>
+                <button
+                  onClick={() => setYieldMode("manual")}
+                  className={`rounded px-3 py-2 ${yieldMode === "manual" ? "bg-slate-900 text-white" : "bg-white border"}`}
+                >
+                  Enter My Own Yields
+                </button>
+              </div>
+            </div>
+
+            <div className="mt-3 grid gap-3 md:grid-cols-3">
+              <div>
+                <div className="mb-1 text-sm">Fillet %</div>
+                <input
+                  type="number"
+                  value={filletPct}
+                  disabled={yieldMode === "typical"}
+                  onChange={(e) => {
+                    const value = Number(e.target.value) || 0;
+                    setFilletPct(value);
+                    setWastePct(Math.max(0, 100 - value - trimPct));
+                  }}
+                  className={inputClass}
+                />
+              </div>
+              <div>
+                <div className="mb-1 text-sm">Trim %</div>
+                <input
+                  type="number"
+                  value={trimPct}
+                  disabled={yieldMode === "typical"}
+                  onChange={(e) => {
+                    const value = Number(e.target.value) || 0;
+                    setTrimPct(value);
+                    setWastePct(Math.max(0, 100 - filletPct - value));
+                  }}
+                  className={inputClass}
+                />
+              </div>
+              <div>
+                <div className="mb-1 text-sm">Waste %</div>
+                <input
+                  type="number"
+                  value={wastePct}
+                  disabled={yieldMode === "typical"}
+                  onChange={(e) => setWastePct(Number(e.target.value) || 0)}
+                  className={inputClass}
+                />
+              </div>
+            </div>
+
+            <div className="mt-3 grid gap-2 text-sm text-slate-700 md:grid-cols-3">
+              <div>Fillets: <strong>{totals.filletKg.toFixed(2)} kg</strong></div>
+              <div>Trim: <strong>{totals.trimKg.toFixed(2)} kg</strong></div>
+              <div>Waste: <strong>{totals.wasteKg.toFixed(2)} kg</strong></div>
+            </div>
+          </div>
+
+          <div className="mt-2 text-sm text-slate-600">
+            Total raw fish cost: <strong>{formatMoney(safeFishWeight * fishCostPerKg)}</strong>
           </div>
           <div className="mt-2 text-xs text-slate-500">▲ = profitable per unit, ▼ = loss per unit</div>
+
+          <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900 leading-6">
+            <strong>Yield Assumptions:</strong><br />
+            Fillet %, Trim %, and Waste are estimated based on typical industry yields for each species.<br />
+            <br />
+            <strong>Fillet %</strong> = usable prime cuts<br />
+            <strong>Trim %</strong> = offcuts used for secondary products (fingers, cakes, etc.)<br />
+            <strong>Waste</strong> = heads, bones, skin, loss<br />
+            <br />
+            These values can vary depending on fish size, quality, and processing method.
+          </div>
 
           {showAddSpecies && (
             <div className="mt-4 space-y-3 rounded-xl border border-slate-200 p-4">
@@ -687,7 +788,7 @@ export default function FishProductCalculatorBasic() {
               </div>
 
               <div className="text-sm text-slate-600">
-                Units: <strong>{currentUnits}</strong> | Labour/unit: <strong>{formatMoney(getProductLabourCostPerUnit(selectedProductData))}</strong> | Ingredients/unit: <strong>{formatMoney(getProductIngredientTotal(selectedProductData.key))}</strong> | Other costs/unit: <strong>{formatMoney(getProductOtherCostTotal(selectedProductData.key))}</strong> | Profit/unit: <strong className={currentProfitPerUnit >= 0 ? "text-green-700" : "text-red-700"}>{formatMoney(currentProfitPerUnit)}</strong>
+                Units: <strong>{currentUnits}</strong> | Fish cost/unit: <strong>{formatMoney(getProductFishCostPerUnit(selectedProductData))}</strong> | Labour/unit: <strong>{formatMoney(getProductLabourCostPerUnit(selectedProductData))}</strong> | Ingredients/unit: <strong>{formatMoney(getProductIngredientTotal(selectedProductData.key))}</strong> | Other costs/unit: <strong>{formatMoney(getProductOtherCostTotal(selectedProductData.key))}</strong> | Profit/unit: <strong className={currentProfitPerUnit >= 0 ? "text-green-700" : "text-red-700"}>{formatMoney(currentProfitPerUnit)}</strong>
               </div>
 
               <div>
@@ -826,8 +927,8 @@ export default function FishProductCalculatorBasic() {
 
       {/* FOOTER */}
       <div className="bg-white border-t mt-10">
-        <div className="max-w-6xl mx-auto px-6 py-6 text-center text-sm text-slate-500">
-          © 2026 Fish Processing Calculator. All rights reserved.
+        <div className="max-w-6xl mx-auto px-4 py-6 text-sm text-slate-600 text-center">
+          © Fish Processing Calculator
         </div>
       </div>
 
