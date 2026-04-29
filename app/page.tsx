@@ -91,9 +91,6 @@ export default function FishProductCalculatorBasic() {
     marinating: 3,
   });
 
-  const [productMachineOverrides, setProductMachineOverrides] = useState<Record<string, string[]>>({});
-  const [newMachineByProduct, setNewMachineByProduct] = useState<Record<string, string>>({});
-
   const baseProducts: Product[] = [
     {
       key: "freshFillets",
@@ -170,7 +167,7 @@ export default function FishProductCalculatorBasic() {
 
   const products = [...baseProducts, ...customProducts];
   const productsForSpecies = products.filter((p) => p.species.includes(fishType));
-  const selectedProductData = products.find((p) => p.key === selectedProduct) || null;
+  const selectedProductData = productsForSpecies.find((p) => p.key === selectedProduct) || null;
 
   const [productIngredients, setProductIngredients] = useState<Record<string, Ingredient[]>>({
     breadedFillets: [
@@ -220,6 +217,7 @@ export default function FishProductCalculatorBasic() {
   useEffect(() => {
     const profile = fishProfiles[fishType as keyof typeof fishProfiles];
 
+    // Adjust based on fish size
     let filletAdj = 0;
     let trimAdj = 0;
 
@@ -269,69 +267,6 @@ export default function FishProductCalculatorBasic() {
   const getProductExtraLabourTotal = (productKey: string) =>
     (productExtraLabour[productKey] || []).reduce((sum, item) => sum + item.staff * item.hours * item.rate, 0);
 
-  const getProductMachines = (product: Product) => productMachineOverrides[product.key] || product.machines;
-
-  const updateProductMachine = (product: Product, index: number, value: string) => {
-    const currentMachines = getProductMachines(product);
-    const oldMachine = currentMachines[index];
-    const newMachine = value.trim().toLowerCase();
-
-    const updatedMachines = currentMachines.map((machine, i) => (i === index ? newMachine : machine));
-
-    setProductMachineOverrides((prev) => ({
-      ...prev,
-      [product.key]: updatedMachines,
-    }));
-
-    if (newMachine && oldMachine !== newMachine) {
-      setMachineStaffing((prev) => ({
-        ...prev,
-        [newMachine]: prev[newMachine] ?? prev[oldMachine] ?? 0,
-      }));
-
-      setMachineHours((prev) => ({
-        ...prev,
-        [newMachine]: prev[newMachine] ?? prev[oldMachine] ?? 0,
-      }));
-    }
-  };
-
-  const removeProductMachine = (product: Product, index: number) => {
-    const updatedMachines = getProductMachines(product).filter((_, i) => i !== index);
-
-    setProductMachineOverrides((prev) => ({
-      ...prev,
-      [product.key]: updatedMachines,
-    }));
-  };
-
-  const addProductMachine = (product: Product) => {
-    const draft = (newMachineByProduct[product.key] || "").trim().toLowerCase();
-    if (!draft) return;
-
-    const currentMachines = getProductMachines(product);
-
-    setProductMachineOverrides((prev) => ({
-      ...prev,
-      [product.key]: [...currentMachines, draft],
-    }));
-
-    setMachineStaffing((prev) => ({
-      ...prev,
-      [draft]: prev[draft] ?? 1,
-    }));
-
-    setMachineHours((prev) => ({
-      ...prev,
-      [draft]: prev[draft] ?? 1,
-    }));
-
-    setNewMachineByProduct((prev) => ({
-      ...prev,
-      [product.key]: "",
-    }));
-  };
-
   const getProductUnits = (product: Product) =>
     calcUnits(product.source === "fillet" ? totals.filletKg : totals.trimKg, product.fishPerUnitKg);
 
@@ -340,7 +275,7 @@ export default function FishProductCalculatorBasic() {
   };
 
   const getMachineLabourTotal = (product: Product) => {
-    const base = getProductMachines(product).reduce((sum, machine) => {
+    const base = product.machines.reduce((sum, machine) => {
       const staff = machineStaffing[machine] || 0;
       const hours = machineHours[machine] || 0;
       return sum + staff * hours * hourlyRate;
@@ -609,6 +544,12 @@ export default function FishProductCalculatorBasic() {
               ✔ See profit per product instantly
             </div>
           </div>
+
+          <div className="mt-6 rounded-xl border border-slate-700 bg-slate-800 p-5 text-sm leading-7 text-slate-200 max-w-3xl">
+            <p>
+              This tool is currently being tested and refined. If you would like access, or if you have feedback from a fish processing or seafood production background, please contact Dan at info@moonblogger.com.
+            </p>
+          </div>
         </div>
       </div>
 
@@ -858,8 +799,6 @@ export default function FishProductCalculatorBasic() {
 
               <div>
                 <div className="mb-2 text-sm font-semibold">Labour Breakdown</div>
-                <p className="mb-3 text-xs text-slate-500">Default processing steps can be edited or removed for each product.</p>
-
                 <div className="mb-3 grid grid-cols-4 gap-2 items-end">
                   <div>
                     <div className="mb-1 text-xs text-slate-500">Hourly Rate (€)</div>
@@ -874,56 +813,13 @@ export default function FishProductCalculatorBasic() {
                 </div>
 
                 <div className="space-y-2">
-                  {getProductMachines(selectedProductData).map((machine, i) => (
-                    <div key={`${machine}-${i}`} className="grid grid-cols-4 gap-2 items-center">
-                      <input
-                        value={machine}
-                        onChange={(e) => updateProductMachine(selectedProductData, i, e.target.value)}
-                        className={inputClass}
-                        placeholder="Step name"
-                      />
-                      <input
-                        type="number"
-                        value={machineStaffing[machine] || 0}
-                        onChange={(e) => setMachineStaffing((prev) => ({ ...prev, [machine]: Number(e.target.value) || 0 }))}
-                        className={inputClass}
-                        placeholder="Staff"
-                      />
-                      <input
-                        type="number"
-                        value={machineHours[machine] || 0}
-                        onChange={(e) => setMachineHours((prev) => ({ ...prev, [machine]: Number(e.target.value) || 0 }))}
-                        className={inputClass}
-                        placeholder="Hours"
-                      />
-                      <button
-                        onClick={() => removeProductMachine(selectedProductData, i)}
-                        className="rounded bg-red-100 px-3 py-2 text-sm text-red-700"
-                      >
-                        Remove
-                      </button>
+                  {selectedProductData.machines.map((machine) => (
+                    <div key={machine} className="grid grid-cols-3 gap-2 items-center">
+                      <div className="capitalize text-sm text-slate-700">{machine}</div>
+                      <input type="number" value={machineStaffing[machine] || 0} onChange={(e) => setMachineStaffing((prev) => ({ ...prev, [machine]: Number(e.target.value) || 0 }))} className={inputClass} placeholder="Staff" />
+                      <input type="number" value={machineHours[machine] || 0} onChange={(e) => setMachineHours((prev) => ({ ...prev, [machine]: Number(e.target.value) || 0 }))} className={inputClass} placeholder="Hours" />
                     </div>
                   ))}
-                </div>
-
-                <div className="mt-3 grid grid-cols-4 gap-2 items-center">
-                  <input
-                    value={newMachineByProduct[selectedProductData.key] || ""}
-                    onChange={(e) =>
-                      setNewMachineByProduct((prev) => ({
-                        ...prev,
-                        [selectedProductData.key]: e.target.value,
-                      }))
-                    }
-                    className={inputClass}
-                    placeholder="New processing step"
-                  />
-                  <button
-                    onClick={() => addProductMachine(selectedProductData)}
-                    className="rounded bg-slate-700 px-3 py-2 text-sm text-white"
-                  >
-                    + Add Step
-                  </button>
                 </div>
               </div>
 
@@ -997,12 +893,13 @@ export default function FishProductCalculatorBasic() {
         <div className={cardClass}>
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-semibold">Save & Compare</h2>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               <button onClick={saveScenario} className="rounded bg-blue-600 px-3 py-2 text-sm text-white">Save Scenario</button>
               <button onClick={() => setShowReportView((s) => !s)} className="rounded bg-slate-700 px-3 py-2 text-sm text-white">{showReportView ? "Hide Report" : "View Report"}</button>
               <button onClick={exportToCsv} className="rounded bg-emerald-600 px-3 py-2 text-sm text-white">Export</button>
             </div>
           </div>
+
           {showReportView && (
             <div className="mt-4 overflow-x-auto">
               <table className="w-full text-sm">
@@ -1024,7 +921,9 @@ export default function FishProductCalculatorBasic() {
                       <td>{s.weight}</td>
                       <td>{formatMoney(s.profit)}</td>
                       <td>{formatMoney(s.costPerUnit)}</td>
-                      <td><button onClick={() => deleteScenario(s.id)} className="text-xs text-red-600">Delete</button></td>
+                      <td>
+                        <button onClick={() => deleteScenario(s.id)} className="text-xs text-red-600">Delete</button>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -1033,7 +932,7 @@ export default function FishProductCalculatorBasic() {
           )}
         </div>
       </div>
-      </div>
+    </div>
 
       {/* FOOTER */}
       <div className="bg-white border-t mt-10">
@@ -1041,7 +940,6 @@ export default function FishProductCalculatorBasic() {
           © Fish Processing Calculator
         </div>
       </div>
-
     </div>
   );
 }

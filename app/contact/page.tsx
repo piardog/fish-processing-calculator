@@ -34,7 +34,7 @@ export default function ContactPage() {
             <div className="mt-6">
               <div className="text-sm text-slate-500 mb-1">Email</div>
               <div className="font-medium">
-                dan@moonblogger.com
+                info@moonblogger.com
               </div>
             </div>
 
