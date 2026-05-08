@@ -37,11 +37,12 @@ export default function FishProductCalculatorBasic() {
   const router = useRouter();
 
   const [showReportView, setShowReportView] = useState(false);
-  const [authChecked, setAuthChecked] = useState(false);
+  const [authStatus, setAuthStatus] = useState<"checking" | "loggedIn" | "loggedOut">("checking");
   const [showAddProduct, setShowAddProduct] = useState(false);
   const [showAddSpecies, setShowAddSpecies] = useState(false);
 
   const [savedScenarios, setSavedScenarios] = useState<any[]>([]);
+  const [currentUserId, setCurrentUserId] = useState<string>("");
 
   const [fishType, setFishType] = useState("haddock");
   const [selectedProduct, setSelectedProduct] = useState("");
@@ -204,32 +205,34 @@ export default function FishProductCalculatorBasic() {
       try {
         const {
           data: { session },
-          error,
         } = await supabase.auth.getSession();
 
-        if (error || !session) {
-          setAuthChecked(true);
-          router.push("/login");
+        if (!session) {
+          setAuthStatus("loggedOut");
           return;
         }
 
-        const raw = localStorage.getItem("fish_scenarios");
-        if (raw) {
-          try {
-            setSavedScenarios(JSON.parse(raw));
-          } catch {}
+        setCurrentUserId(session.user.id);
+
+        const { data, error } = await supabase
+          .from("scenarios")
+          .select("*")
+          .eq("user_id", session.user.id)
+          .order("created_at", { ascending: false });
+
+        if (!error && data) {
+          setSavedScenarios(data);
         }
 
-        setAuthChecked(true);
+        setAuthStatus("loggedIn");
       } catch (err) {
         console.error("Login check failed:", err);
-        setAuthChecked(true);
-        router.push("/login");
+        setAuthStatus("loggedOut");
       }
     };
 
     checkUser();
-  }, [router]);
+  }, []);
 
   useEffect(() => {
     const profile = fishProfiles[fishType as keyof typeof fishProfiles];
@@ -391,8 +394,9 @@ export default function FishProductCalculatorBasic() {
     }));
   };
 
-  const saveScenario = () => {
-    if (!selectedProductData) return;
+  const saveScenario = async () => {
+    if (!selectedProductData || !currentUserId) return;
+
     const scenario = {
       id: Date.now(),
       species: fishProfiles[fishType as keyof typeof fishProfiles].label,
@@ -405,15 +409,44 @@ export default function FishProductCalculatorBasic() {
         getProductOtherCostTotal(selectedProductData.key) +
         getProductLabourCostPerUnit(selectedProductData),
     };
-    const updated = [scenario, ...savedScenarios];
-    setSavedScenarios(updated);
-    localStorage.setItem("fish_scenarios", JSON.stringify(updated));
+    const { data, error } = await supabase
+      .from("scenarios")
+      .insert([
+        {
+          user_id: currentUserId,
+          species: scenario.species,
+          product: scenario.product,
+          weight: scenario.weight,
+          profit: scenario.profit,
+          cost_per_unit: scenario.costPerUnit,
+        },
+      ])
+      .select();
+
+    if (error) {
+      console.error(error);
+      alert("Failed to save scenario");
+      return;
+    }
+
+    if (data) {
+      setSavedScenarios((prev) => [...data, ...prev]);
+    }
   };
 
-  const deleteScenario = (id: number) => {
+  const deleteScenario = async (id: number) => {
+    const { error } = await supabase
+      .from("scenarios")
+      .delete()
+      .eq("id", id);
+
+    if (error) {
+      console.error(error);
+      return;
+    }
+
     const updated = savedScenarios.filter((s) => s.id !== id);
     setSavedScenarios(updated);
-    localStorage.setItem("fish_scenarios", JSON.stringify(updated));
   };
 
   const addFish = () => {
@@ -443,7 +476,7 @@ export default function FishProductCalculatorBasic() {
       s.product,
       s.weight,
       s.profit.toFixed(2),
-      s.costPerUnit.toFixed(2),
+      (s.cost_per_unit || s.costPerUnit).toFixed(2),
     ]);
 
     const csv = [headers, ...rows]
@@ -468,11 +501,30 @@ export default function FishProductCalculatorBasic() {
 
   const currentProfitPerUnit = selectedProductData ? getProductProfitPerUnit(selectedProductData) : 0;
 
-  if (!authChecked) {
+  if (authStatus === "checking") {
     return (
       <div className="min-h-screen bg-slate-100 flex items-center justify-center p-6">
         <div className="rounded-2xl bg-white border border-slate-200 p-6 shadow-sm text-slate-700">
           Loading calculator...
+        </div>
+      </div>
+    );
+  }
+
+  if (authStatus === "loggedOut") {
+    return (
+      <div className="min-h-screen bg-slate-100 flex items-center justify-center p-6">
+        <div className="w-full max-w-lg rounded-2xl bg-white border border-slate-200 p-8 shadow-sm text-center">
+          <h1 className="text-2xl font-bold mb-3">Fish Processing Calculator</h1>
+          <p className="text-slate-600 mb-6">
+            Please log in to use the calculator.
+          </p>
+          <button
+            onClick={() => router.push("/login")}
+            className="rounded bg-slate-900 px-5 py-3 text-white text-sm hover:bg-slate-700"
+          >
+            Go to Login
+          </button>
         </div>
       </div>
     );
@@ -899,7 +951,7 @@ export default function FishProductCalculatorBasic() {
                         <td>{s.product}</td>
                         <td>{s.weight}</td>
                         <td>{formatMoney(s.profit)}</td>
-                        <td>{formatMoney(s.costPerUnit)}</td>
+                        <td>{formatMoney(s.cost_per_unit || s.costPerUnit)}</td>
                         <td>
                           <button onClick={() => deleteScenario(s.id)} className="text-xs text-red-600">Delete</button>
                         </td>
