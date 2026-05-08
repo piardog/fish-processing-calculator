@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
+import { supabase } from "@/lib/supabase";
 
 type Product = {
   key: string;
@@ -32,11 +34,10 @@ type OtherCost = {
 };
 
 export default function FishProductCalculatorBasic() {
+  const router = useRouter();
+
   const [showReportView, setShowReportView] = useState(false);
-  const [authChecked, setAuthChecked] = useState(process.env.NODE_ENV === "development");
-  const [isUnlocked, setIsUnlocked] = useState(process.env.NODE_ENV === "development");
-  const [passwordInput, setPasswordInput] = useState("");
-  const [passwordError, setPasswordError] = useState("");
+  const [authChecked, setAuthChecked] = useState(false);
   const [showAddProduct, setShowAddProduct] = useState(false);
   const [showAddSpecies, setShowAddSpecies] = useState(false);
 
@@ -199,25 +200,40 @@ export default function FishProductCalculatorBasic() {
   const selectedProductIngredients = selectedProductData ? productIngredients[selectedProductData.key] || [] : [];
 
   useEffect(() => {
-    if (process.env.NODE_ENV !== "development") {
-      const unlocked = localStorage.getItem("fish_tool_unlocked");
-      if (unlocked === "yes") setIsUnlocked(true);
-    }
-
-    const raw = localStorage.getItem("fish_scenarios");
-    if (raw) {
+    const checkUser = async () => {
       try {
-        setSavedScenarios(JSON.parse(raw));
-      } catch {}
-    }
+        const {
+          data: { session },
+          error,
+        } = await supabase.auth.getSession();
 
-    setAuthChecked(true);
-  }, []);
+        if (error || !session) {
+          setAuthChecked(true);
+          router.push("/login");
+          return;
+        }
+
+        const raw = localStorage.getItem("fish_scenarios");
+        if (raw) {
+          try {
+            setSavedScenarios(JSON.parse(raw));
+          } catch {}
+        }
+
+        setAuthChecked(true);
+      } catch (err) {
+        console.error("Login check failed:", err);
+        setAuthChecked(true);
+        router.push("/login");
+      }
+    };
+
+    checkUser();
+  }, [router]);
 
   useEffect(() => {
     const profile = fishProfiles[fishType as keyof typeof fishProfiles];
 
-    // Adjust based on fish size
     let filletAdj = 0;
     let trimAdj = 0;
 
@@ -445,63 +461,28 @@ export default function FishProductCalculatorBasic() {
     URL.revokeObjectURL(url);
   };
 
-  const unlockTool = () => {
-    const correctPassword = "danbenny";
-    if (passwordInput === correctPassword) {
-      setIsUnlocked(true);
-      setPasswordError("");
-      localStorage.setItem("fish_tool_unlocked", "yes");
-    } else {
-      setPasswordError("Incorrect password");
-    }
-  };
-
-  const lockTool = () => {
-    setIsUnlocked(false);
-    setPasswordInput("");
-    localStorage.removeItem("fish_tool_unlocked");
+  const logout = async () => {
+    await supabase.auth.signOut();
+    router.push("/login");
   };
 
   const currentProfitPerUnit = selectedProductData ? getProductProfitPerUnit(selectedProductData) : 0;
 
   if (!authChecked) {
-    return <div className="min-h-screen bg-slate-100" />;
-  }
-  const currentUnits = selectedProductData ? getProductUnits(selectedProductData) : 0;
-  const currentLabourTotal = selectedProductData ? getMachineLabourTotal(selectedProductData) + getProductExtraLabourTotal(selectedProductData.key) : 0;
-
-  if (!isUnlocked && process.env.NODE_ENV !== "development") {
     return (
       <div className="min-h-screen bg-slate-100 flex items-center justify-center p-6">
-        <div className="w-full max-w-2xl rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
-          <h1 className="text-2xl font-bold mb-3">Fish Processing Calculator</h1>
-          <p className="text-slate-600 mb-2">Enter the password to unlock the tool.</p>
-          <div className="mb-5 rounded-xl border border-blue-200 bg-blue-50 p-5 text-sm leading-7 text-blue-900 min-h-[200px]">
-            <p>This tool is currently being tested.</p>
-            <p>For access or enquiries,</p>
-            <p>please contact Dan at info@moonblogger.com.</p>
-          </div>
-          <div className="space-y-3">
-            <input
-              type="password"
-              value={passwordInput}
-              onChange={(e) => setPasswordInput(e.target.value)}
-              className={inputClass}
-              placeholder="Password"
-            />
-            {passwordError && <div className="text-sm text-red-600">{passwordError}</div>}
-            <button onClick={unlockTool} className="w-full rounded bg-slate-900 px-4 py-2 text-white text-sm hover:bg-slate-700">
-              Unlock Tool
-            </button>
-          </div>
+        <div className="rounded-2xl bg-white border border-slate-200 p-6 shadow-sm text-slate-700">
+          Loading calculator...
         </div>
       </div>
     );
   }
 
+  const currentUnits = selectedProductData ? getProductUnits(selectedProductData) : 0;
+  const currentLabourTotal = selectedProductData ? getMachineLabourTotal(selectedProductData) + getProductExtraLabourTotal(selectedProductData.key) : 0;
+
   return (
     <div className="min-h-screen bg-slate-100">
-
       {/* NAVBAR */}
       <div className="bg-white border-b">
         <div className="max-w-6xl mx-auto px-4 py-4 md:px-6">
@@ -515,9 +496,7 @@ export default function FishProductCalculatorBasic() {
               <a href="/terms" className="hover:underline">Terms</a>
               <a href="/disclaimer" className="hover:underline">Disclaimer</a>
               <a href="/contact" className="hover:underline">Contact</a>
-              {process.env.NODE_ENV !== "development" && (
-                <button onClick={lockTool} className="rounded bg-slate-900 px-3 py-1 text-white hover:bg-slate-700">Lock</button>
-              )}
+              <button onClick={logout} className="rounded bg-slate-900 px-3 py-1 text-white hover:bg-slate-700">Logout</button>
             </div>
           </div>
         </div>
@@ -555,384 +534,384 @@ export default function FishProductCalculatorBasic() {
 
       <div className="p-6">
         <div className="mx-auto max-w-6xl space-y-6">
-        <div className={cardClass}>
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold">Start Point</h2>
-            <button onClick={() => setShowAddSpecies((s) => !s)} className="rounded bg-slate-700 px-3 py-2 text-sm text-white">
-              {showAddSpecies ? "Hide" : "+ Add Species"}
-            </button>
-          </div>
-          <div className="grid gap-3 md:grid-cols-2 mt-3">
-            <div>
-              <div className="mb-1 text-sm">Species</div>
-              <select value={fishType} onChange={(e) => setFishType(e.target.value)} className={inputClass}>
-                {Object.entries(fishProfiles).map(([k, v]) => (
-                  <option key={k} value={k}>{v.label}</option>
-                ))}
-              </select>
+          <div className={cardClass}>
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-semibold">Start Point</h2>
+              <button onClick={() => setShowAddSpecies((s) => !s)} className="rounded bg-slate-700 px-3 py-2 text-sm text-white">
+                {showAddSpecies ? "Hide" : "+ Add Species"}
+              </button>
             </div>
-            <div>
-              <div className="mb-1 text-sm">Product Focus</div>
-              <select value={selectedProduct} onChange={(e) => setSelectedProduct(e.target.value)} className={inputClass}>
-                <option value="">All Products</option>
-                {productsForSpecies.map((p) => {
-                  const profit = getProductProfitPerUnit(p);
-                  const marker = profit >= 0 ? "▲" : "▼";
-                  const sign = profit >= 0 ? "+" : "-";
-                  return <option key={p.key} value={p.key}>{p.name} ({marker} {sign}{formatMoney(Math.abs(profit))}/unit)</option>;
-                })}
-              </select>
-            </div>
-          </div>
-          <div className="mt-3 grid gap-3 md:grid-cols-3">
-            <div>
-              <div className="mb-1 text-sm">Fish Size</div>
-              <select value={fishSize} onChange={(e) => setFishSize(e.target.value)} className={inputClass}>
-                <option value="small">Small</option>
-                <option value="medium">Medium</option>
-                <option value="large">Large</option>
-              </select>
-            </div>
-            <div>
-              <div className="mb-1 text-sm">Raw Material Weight (kg)</div>
-              <input type="number" value={fishWeight} onChange={(e) => setFishWeight(Number(e.target.value) || 0)} className={inputClass} />
-            </div>
-            <div>
-              <div className="mb-1 text-sm">Fish Purchase Price €/kg</div>
-              <input type="number" value={fishCostPerKg} onChange={(e) => setFishCostPerKg(Number(e.target.value) || 0)} className={inputClass} />
-            </div>
-          </div>
-          <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-4">
-            <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-              <div className="text-sm font-semibold">Yield Settings</div>
-              <div className="flex gap-2 text-sm">
-                <button
-                  onClick={() => setYieldMode("typical")}
-                  className={`rounded px-3 py-2 ${yieldMode === "typical" ? "bg-slate-900 text-white" : "bg-white border"}`}
-                >
-                  Use Typical Yields
-                </button>
-                <button
-                  onClick={() => setYieldMode("manual")}
-                  className={`rounded px-3 py-2 ${yieldMode === "manual" ? "bg-slate-900 text-white" : "bg-white border"}`}
-                >
-                  Enter My Own Yields
-                </button>
+            <div className="grid gap-3 md:grid-cols-2 mt-3">
+              <div>
+                <div className="mb-1 text-sm">Species</div>
+                <select value={fishType} onChange={(e) => setFishType(e.target.value)} className={inputClass}>
+                  {Object.entries(fishProfiles).map(([k, v]) => (
+                    <option key={k} value={k}>{v.label}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <div className="mb-1 text-sm">Product Focus</div>
+                <select value={selectedProduct} onChange={(e) => setSelectedProduct(e.target.value)} className={inputClass}>
+                  <option value="">All Products</option>
+                  {productsForSpecies.map((p) => {
+                    const profit = getProductProfitPerUnit(p);
+                    const marker = profit >= 0 ? "▲" : "▼";
+                    const sign = profit >= 0 ? "+" : "-";
+                    return <option key={p.key} value={p.key}>{p.name} ({marker} {sign}{formatMoney(Math.abs(profit))}/unit)</option>;
+                  })}
+                </select>
               </div>
             </div>
-
             <div className="mt-3 grid gap-3 md:grid-cols-3">
               <div>
-                <div className="mb-1 text-sm">Fillet %</div>
-                <input
-                  type="number"
-                  value={filletPct}
-                  disabled={yieldMode === "typical"}
-                  onChange={(e) => {
-                    const value = Number(e.target.value) || 0;
-                    setFilletPct(value);
-                    setWastePct(Math.max(0, 100 - value - trimPct));
-                  }}
-                  className={inputClass}
-                />
+                <div className="mb-1 text-sm">Fish Size</div>
+                <select value={fishSize} onChange={(e) => setFishSize(e.target.value)} className={inputClass}>
+                  <option value="small">Small</option>
+                  <option value="medium">Medium</option>
+                  <option value="large">Large</option>
+                </select>
               </div>
               <div>
-                <div className="mb-1 text-sm">Trim %</div>
-                <input
-                  type="number"
-                  value={trimPct}
-                  disabled={yieldMode === "typical"}
-                  onChange={(e) => {
-                    const value = Number(e.target.value) || 0;
-                    setTrimPct(value);
-                    setWastePct(Math.max(0, 100 - filletPct - value));
-                  }}
-                  className={inputClass}
-                />
+                <div className="mb-1 text-sm">Raw Material Weight (kg)</div>
+                <input type="number" value={fishWeight} onChange={(e) => setFishWeight(Number(e.target.value) || 0)} className={inputClass} />
               </div>
               <div>
-                <div className="mb-1 text-sm">Waste %</div>
-                <input
-                  type="number"
-                  value={wastePct}
-                  disabled={yieldMode === "typical"}
-                  onChange={(e) => setWastePct(Number(e.target.value) || 0)}
-                  className={inputClass}
-                />
+                <div className="mb-1 text-sm">Fish Purchase Price €/kg</div>
+                <input type="number" value={fishCostPerKg} onChange={(e) => setFishCostPerKg(Number(e.target.value) || 0)} className={inputClass} />
               </div>
             </div>
-
-            <div className="mt-3 grid gap-2 text-sm text-slate-700 md:grid-cols-3">
-              <div>Fillets: <strong>{totals.filletKg.toFixed(2)} kg</strong></div>
-              <div>Trim: <strong>{totals.trimKg.toFixed(2)} kg</strong></div>
-              <div>Waste: <strong>{totals.wasteKg.toFixed(2)} kg</strong></div>
-            </div>
-          </div>
-
-          <div className="mt-2 text-sm text-slate-600">
-            Total raw fish cost: <strong>{formatMoney(safeFishWeight * fishCostPerKg)}</strong>
-          </div>
-          <div className="mt-2 text-xs text-slate-500">▲ = profitable per unit, ▼ = loss per unit</div>
-
-          <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900 leading-6">
-            <strong>Yield Assumptions:</strong><br />
-            Fillet %, Trim %, and Waste are estimated based on typical industry yields for each species.<br />
-            <br />
-            <strong>Fillet %</strong> = usable prime cuts<br />
-            <strong>Trim %</strong> = offcuts used for secondary products (fingers, cakes, etc.)<br />
-            <strong>Waste</strong> = heads, bones, skin, loss<br />
-            <br />
-            These values can vary depending on fish size, quality, and processing method.
-          </div>
-
-          {showAddSpecies && (
-            <div className="mt-4 space-y-3 rounded-xl border border-slate-200 p-4">
-              <div className="text-sm font-semibold">Add Species</div>
-              <div className="grid gap-3 md:grid-cols-2">
-                <div>
-                  <div className="mb-1 text-sm">Species Key</div>
-                  <input value={newFish.key} onChange={(e) => setNewFish({ ...newFish, key: e.target.value })} className={inputClass} placeholder="e.g. cod" />
+            <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-4">
+              <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+                <div className="text-sm font-semibold">Yield Settings</div>
+                <div className="flex gap-2 text-sm">
+                  <button
+                    onClick={() => setYieldMode("typical")}
+                    className={`rounded px-3 py-2 ${yieldMode === "typical" ? "bg-slate-900 text-white" : "bg-white border"}`}
+                  >
+                    Use Typical Yields
+                  </button>
+                  <button
+                    onClick={() => setYieldMode("manual")}
+                    className={`rounded px-3 py-2 ${yieldMode === "manual" ? "bg-slate-900 text-white" : "bg-white border"}`}
+                  >
+                    Enter My Own Yields
+                  </button>
                 </div>
-                <div>
-                  <div className="mb-1 text-sm">Label</div>
-                  <input value={newFish.label} onChange={(e) => setNewFish({ ...newFish, label: e.target.value })} className={inputClass} placeholder="e.g. Cod" />
-                </div>
+              </div>
+
+              <div className="mt-3 grid gap-3 md:grid-cols-3">
                 <div>
                   <div className="mb-1 text-sm">Fillet %</div>
-                  <input type="number" value={newFish.filletPct} onChange={(e) => setNewFish({ ...newFish, filletPct: Number(e.target.value) || 0 })} className={inputClass} />
+                  <input
+                    type="number"
+                    value={filletPct}
+                    disabled={yieldMode === "typical"}
+                    onChange={(e) => {
+                      const value = Number(e.target.value) || 0;
+                      setFilletPct(value);
+                      setWastePct(Math.max(0, 100 - value - trimPct));
+                    }}
+                    className={inputClass}
+                  />
                 </div>
                 <div>
                   <div className="mb-1 text-sm">Trim %</div>
-                  <input type="number" value={newFish.trimPct} onChange={(e) => setNewFish({ ...newFish, trimPct: Number(e.target.value) || 0 })} className={inputClass} />
+                  <input
+                    type="number"
+                    value={trimPct}
+                    disabled={yieldMode === "typical"}
+                    onChange={(e) => {
+                      const value = Number(e.target.value) || 0;
+                      setTrimPct(value);
+                      setWastePct(Math.max(0, 100 - filletPct - value));
+                    }}
+                    className={inputClass}
+                  />
                 </div>
                 <div>
-                  <div className="mb-1 text-sm">Fish Cost per kg (€)</div>
-                  <input type="number" value={newFish.fishCostPerKg} onChange={(e) => setNewFish({ ...newFish, fishCostPerKg: Number(e.target.value) || 0 })} className={inputClass} />
+                  <div className="mb-1 text-sm">Waste %</div>
+                  <input
+                    type="number"
+                    value={wastePct}
+                    disabled={yieldMode === "typical"}
+                    onChange={(e) => setWastePct(Number(e.target.value) || 0)}
+                    className={inputClass}
+                  />
                 </div>
               </div>
-              <button onClick={addFish} className="rounded bg-blue-600 px-3 py-2 text-sm text-white">Save Species</button>
-            </div>
-          )}
-        </div>
 
-        <div className={cardClass}>
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold">Add Product</h2>
-            <button onClick={() => setShowAddProduct((s) => !s)} className="rounded bg-slate-700 px-3 py-2 text-sm text-white">
-              {showAddProduct ? "Hide" : "+ Add Product"}
-            </button>
+              <div className="mt-3 grid gap-2 text-sm text-slate-700 md:grid-cols-3">
+                <div>Fillets: <strong>{totals.filletKg.toFixed(2)} kg</strong></div>
+                <div>Trim: <strong>{totals.trimKg.toFixed(2)} kg</strong></div>
+                <div>Waste: <strong>{totals.wasteKg.toFixed(2)} kg</strong></div>
+              </div>
+            </div>
+
+            <div className="mt-2 text-sm text-slate-600">
+              Total raw fish cost: <strong>{formatMoney(safeFishWeight * fishCostPerKg)}</strong>
+            </div>
+            <div className="mt-2 text-xs text-slate-500">▲ = profitable per unit, ▼ = loss per unit</div>
+
+            <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900 leading-6">
+              <strong>Yield Assumptions:</strong><br />
+              Fillet %, Trim %, and Waste are estimated based on typical industry yields for each species.<br />
+              <br />
+              <strong>Fillet %</strong> = usable prime cuts<br />
+              <strong>Trim %</strong> = offcuts used for secondary products (fingers, cakes, etc.)<br />
+              <strong>Waste</strong> = heads, bones, skin, loss<br />
+              <br />
+              These values can vary depending on fish size, quality, and processing method.
+            </div>
+
+            {showAddSpecies && (
+              <div className="mt-4 space-y-3 rounded-xl border border-slate-200 p-4">
+                <div className="text-sm font-semibold">Add Species</div>
+                <div className="grid gap-3 md:grid-cols-2">
+                  <div>
+                    <div className="mb-1 text-sm">Species Key</div>
+                    <input value={newFish.key} onChange={(e) => setNewFish({ ...newFish, key: e.target.value })} className={inputClass} placeholder="e.g. cod" />
+                  </div>
+                  <div>
+                    <div className="mb-1 text-sm">Label</div>
+                    <input value={newFish.label} onChange={(e) => setNewFish({ ...newFish, label: e.target.value })} className={inputClass} placeholder="e.g. Cod" />
+                  </div>
+                  <div>
+                    <div className="mb-1 text-sm">Fillet %</div>
+                    <input type="number" value={newFish.filletPct} onChange={(e) => setNewFish({ ...newFish, filletPct: Number(e.target.value) || 0 })} className={inputClass} />
+                  </div>
+                  <div>
+                    <div className="mb-1 text-sm">Trim %</div>
+                    <input type="number" value={newFish.trimPct} onChange={(e) => setNewFish({ ...newFish, trimPct: Number(e.target.value) || 0 })} className={inputClass} />
+                  </div>
+                  <div>
+                    <div className="mb-1 text-sm">Fish Cost per kg (€)</div>
+                    <input type="number" value={newFish.fishCostPerKg} onChange={(e) => setNewFish({ ...newFish, fishCostPerKg: Number(e.target.value) || 0 })} className={inputClass} />
+                  </div>
+                </div>
+                <button onClick={addFish} className="rounded bg-blue-600 px-3 py-2 text-sm text-white">Save Species</button>
+              </div>
+            )}
           </div>
-          {showAddProduct && (
-            <div className="mt-4 space-y-3">
-              <div className="grid gap-3 md:grid-cols-2">
-                <div>
-                  <div className="mb-1 text-sm">Species</div>
-                  <select value={newProduct.species} onChange={(e) => setNewProduct({ ...newProduct, species: e.target.value })} className={inputClass}>
-                    {Object.entries(fishProfiles).map(([k, v]) => (
-                      <option key={k} value={k}>{v.label}</option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <div className="mb-1 text-sm">Product Key</div>
-                  <input value={newProduct.key} onChange={(e) => setNewProduct({ ...newProduct, key: e.target.value })} className={inputClass} />
-                </div>
-                <div>
-                  <div className="mb-1 text-sm">Product Name</div>
-                  <input value={newProduct.name} onChange={(e) => setNewProduct({ ...newProduct, name: e.target.value })} className={inputClass} />
-                </div>
-                <div>
-                  <div className="mb-1 text-sm">Source</div>
-                  <select value={newProduct.source} onChange={(e) => setNewProduct({ ...newProduct, source: e.target.value as "fillet" | "trim" })} className={inputClass}>
-                    <option value="trim">Trim</option>
-                    <option value="fillet">Fillet</option>
-                  </select>
-                </div>
-                <div>
-                  <div className="mb-1 text-sm">Fish per Unit (kg)</div>
-                  <input type="number" value={newProduct.fishPerUnitKg} onChange={(e) => setNewProduct({ ...newProduct, fishPerUnitKg: Number(e.target.value) || 0 })} className={inputClass} />
-                </div>
-                <div>
-                  <div className="mb-1 text-sm">Sell Price (€)</div>
-                  <input type="number" value={newProduct.price} onChange={(e) => setNewProduct({ ...newProduct, price: Number(e.target.value) || 0 })} className={inputClass} />
-                </div>
-              </div>
-              <div>
-                <div className="mb-1 text-sm">Note</div>
-                <input value={newProduct.note} onChange={(e) => setNewProduct({ ...newProduct, note: e.target.value })} className={inputClass} />
-              </div>
-              <button
-                onClick={() => {
-                  if (!newProduct.key || !newProduct.name) return;
-                  setCustomProducts((prev) => [
-                    ...prev,
-                    {
-                      ...newProduct,
-                      species: [newProduct.species],
-                      machines: newProduct.source === "fillet" ? ["filleting", "packing"] : ["mincer", "packing"],
-                    },
-                  ]);
-                  setNewProduct({ key: "", name: "", source: "trim", species: fishType, fishPerUnitKg: 0, price: 0, note: "" });
-                }}
-                className="rounded bg-green-600 px-3 py-2 text-sm text-white"
-              >
-                Save Product
+
+          <div className={cardClass}>
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-semibold">Add Product</h2>
+              <button onClick={() => setShowAddProduct((s) => !s)} className="rounded bg-slate-700 px-3 py-2 text-sm text-white">
+                {showAddProduct ? "Hide" : "+ Add Product"}
               </button>
             </div>
-          )}
-        </div>
-
-        <div className={`${cardClass} ${selectedProductData ? (currentProfitPerUnit >= 0 ? "border-green-300 bg-green-50" : "border-red-300 bg-red-50") : ""}`}>
-          <h2 className="text-lg font-semibold">Selected Product</h2>
-          {!selectedProductData ? (
-            <p className="mt-2 text-sm text-slate-600">Select a product to see ingredients and costs.</p>
-          ) : (
-            <div className="mt-3 space-y-4">
-              <div>
-                <div className="font-medium">{selectedProductData.name}</div>
-                <div className="text-sm text-slate-500">{selectedProductData.note}</div>
-              </div>
-
-              <div className="text-sm text-slate-600">
-                Units: <strong>{currentUnits}</strong> | Fish cost/unit: <strong>{formatMoney(getProductFishCostPerUnit(selectedProductData))}</strong> | Labour/unit: <strong>{formatMoney(getProductLabourCostPerUnit(selectedProductData))}</strong> | Ingredients/unit: <strong>{formatMoney(getProductIngredientTotal(selectedProductData.key))}</strong> | Other costs/unit: <strong>{formatMoney(getProductOtherCostTotal(selectedProductData.key))}</strong> | Profit/unit: <strong className={currentProfitPerUnit >= 0 ? "text-green-700" : "text-red-700"}>{formatMoney(currentProfitPerUnit)}</strong>
-              </div>
-
-              <div>
-                <div className="mb-2 text-sm font-semibold">Labour Breakdown</div>
-                <div className="mb-3 grid grid-cols-4 gap-2 items-end">
+            {showAddProduct && (
+              <div className="mt-4 space-y-3">
+                <div className="grid gap-3 md:grid-cols-2">
                   <div>
-                    <div className="mb-1 text-xs text-slate-500">Hourly Rate (€)</div>
-                    <input type="number" value={hourlyRate} onChange={(e) => setHourlyRate(Number(e.target.value) || 0)} className={inputClass} />
+                    <div className="mb-1 text-sm">Species</div>
+                    <select value={newProduct.species} onChange={(e) => setNewProduct({ ...newProduct, species: e.target.value })} className={inputClass}>
+                      {Object.entries(fishProfiles).map(([k, v]) => (
+                        <option key={k} value={k}>{v.label}</option>
+                      ))}
+                    </select>
                   </div>
                   <div>
-                    <div className="mb-1 text-xs text-slate-500">Operators</div>
-                    <input type="number" value={operatorAmount} onChange={(e) => setOperatorAmount(Math.max(1, Number(e.target.value) || 1))} className={inputClass} />
+                    <div className="mb-1 text-sm">Product Key</div>
+                    <input value={newProduct.key} onChange={(e) => setNewProduct({ ...newProduct, key: e.target.value })} className={inputClass} />
                   </div>
-                  <div className="text-sm text-slate-600">Labour total: <strong>{formatMoney(currentLabourTotal)}</strong></div>
-                  <div className="text-sm text-slate-600">Labour/unit: <strong>{formatMoney(getProductLabourCostPerUnit(selectedProductData))}</strong></div>
-                </div>
-
-                <div className="space-y-2">
-                  {selectedProductData.machines.map((machine) => (
-                    <div key={machine} className="grid grid-cols-3 gap-2 items-center">
-                      <div className="capitalize text-sm text-slate-700">{machine}</div>
-                      <input type="number" value={machineStaffing[machine] || 0} onChange={(e) => setMachineStaffing((prev) => ({ ...prev, [machine]: Number(e.target.value) || 0 }))} className={inputClass} placeholder="Staff" />
-                      <input type="number" value={machineHours[machine] || 0} onChange={(e) => setMachineHours((prev) => ({ ...prev, [machine]: Number(e.target.value) || 0 }))} className={inputClass} placeholder="Hours" />
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div>
-                <div className="mb-2 text-sm font-semibold">Extra Labour</div>
-                {(productExtraLabour[selectedProductData.key] || []).map((item, i) => (
-                  <div key={i} className="mt-1 grid grid-cols-5 gap-2 items-center">
-                    <input value={item.name} onChange={(e) => updateExtraLabour(selectedProductData.key, i, "name", e.target.value)} className={inputClass} placeholder="Task" />
-                    <input type="number" value={item.staff} onChange={(e) => updateExtraLabour(selectedProductData.key, i, "staff", e.target.value)} className={inputClass} placeholder="Staff" />
-                    <input type="number" value={item.hours} onChange={(e) => updateExtraLabour(selectedProductData.key, i, "hours", e.target.value)} className={inputClass} placeholder="Hours" />
-                    <input type="number" value={item.rate} onChange={(e) => updateExtraLabour(selectedProductData.key, i, "rate", e.target.value)} className={inputClass} placeholder="Rate" />
-                    <button onClick={() => removeExtraLabourFromProduct(selectedProductData.key, i)} className="rounded bg-red-100 px-3 py-2 text-sm text-red-700">Remove</button>
+                  <div>
+                    <div className="mb-1 text-sm">Product Name</div>
+                    <input value={newProduct.name} onChange={(e) => setNewProduct({ ...newProduct, name: e.target.value })} className={inputClass} />
                   </div>
-                ))}
-                <div className="mt-3 grid grid-cols-5 gap-2 items-center">
-                  <input value={newExtraLabourByProduct[selectedProductData.key]?.name || ""} onChange={(e) => setNewExtraLabourByProduct((prev) => ({ ...prev, [selectedProductData.key]: { ...(prev[selectedProductData.key] || { staff: 0, hours: 0, rate: hourlyRate }), name: e.target.value } }))} className={inputClass} placeholder="Extra labour task" />
-                  <input type="number" value={newExtraLabourByProduct[selectedProductData.key]?.staff || 0} onChange={(e) => setNewExtraLabourByProduct((prev) => ({ ...prev, [selectedProductData.key]: { ...(prev[selectedProductData.key] || { name: "", hours: 0, rate: hourlyRate }), staff: Number(e.target.value) || 0 } }))} className={inputClass} placeholder="Staff" />
-                  <input type="number" value={newExtraLabourByProduct[selectedProductData.key]?.hours || 0} onChange={(e) => setNewExtraLabourByProduct((prev) => ({ ...prev, [selectedProductData.key]: { ...(prev[selectedProductData.key] || { name: "", staff: 0, rate: hourlyRate }), hours: Number(e.target.value) || 0 } }))} className={inputClass} placeholder="Hours" />
-                  <input type="number" value={newExtraLabourByProduct[selectedProductData.key]?.rate || hourlyRate} onChange={(e) => setNewExtraLabourByProduct((prev) => ({ ...prev, [selectedProductData.key]: { ...(prev[selectedProductData.key] || { name: "", staff: 0, hours: 0 }), rate: Number(e.target.value) || 0 } }))} className={inputClass} placeholder="Rate (€)" />
-                  <button onClick={() => addExtraLabourToProduct(selectedProductData.key)} className="rounded bg-slate-700 px-3 py-2 text-sm text-white">+ Add Labour</button>
-                </div>
-              </div>
-
-              <div>
-                <div className="mb-2 text-sm font-semibold">Ingredients Breakdown</div>
-                {selectedProductIngredients.length === 0 ? (
-                  <p className="text-sm text-slate-500">No ingredients added yet</p>
-                ) : (
-                  <>
-                    {selectedProductIngredients.map((item, i) => (
-                      <div key={i} className="mt-1 grid grid-cols-4 gap-2 items-center">
-                        <input value={item.name} onChange={(e) => updateIngredient(selectedProductData.key, i, "name", e.target.value)} className={inputClass} />
-                        <input type="number" value={item.quantity} onChange={(e) => updateIngredient(selectedProductData.key, i, "quantity", e.target.value)} className={inputClass} placeholder="Qty" />
-                        <input type="number" value={item.price} onChange={(e) => updateIngredient(selectedProductData.key, i, "price", e.target.value)} className={inputClass} placeholder="Price" />
-                        <button onClick={() => removeIngredientFromProduct(selectedProductData.key, i)} className="rounded bg-red-100 px-3 py-2 text-sm text-red-700">Remove</button>
-                      </div>
-                    ))}
-                    <div className="mt-2 text-sm text-slate-700">
-                      Ingredients total per unit: <strong>{formatMoney(getProductIngredientTotal(selectedProductData.key))}</strong>
-                    </div>
-                  </>
-                )}
-
-                <div className="mt-3 grid grid-cols-4 gap-2 items-center">
-                  <input value={newIngredientByProduct[selectedProductData.key]?.name || ""} onChange={(e) => setNewIngredientByProduct((prev) => ({ ...prev, [selectedProductData.key]: { ...(prev[selectedProductData.key] || { quantity: 0, price: 0 }), name: e.target.value } }))} className={inputClass} placeholder="Ingredient name" />
-                  <input type="number" value={newIngredientByProduct[selectedProductData.key]?.quantity || 0} onChange={(e) => setNewIngredientByProduct((prev) => ({ ...prev, [selectedProductData.key]: { ...(prev[selectedProductData.key] || { name: "", price: 0 }), quantity: Number(e.target.value) || 0 } }))} className={inputClass} placeholder="Qty" />
-                  <input type="number" value={newIngredientByProduct[selectedProductData.key]?.price || 0} onChange={(e) => setNewIngredientByProduct((prev) => ({ ...prev, [selectedProductData.key]: { ...(prev[selectedProductData.key] || { name: "", quantity: 0 }), price: Number(e.target.value) || 0 } }))} className={inputClass} placeholder="Price" />
-                  <button onClick={() => addIngredientToProduct(selectedProductData.key)} className="rounded bg-green-600 px-3 py-2 text-sm text-white">+ Add Ingredient</button>
-                </div>
-              </div>
-
-              <div>
-                <div className="mb-2 text-sm font-semibold">Other Costs</div>
-                {(productOtherCosts[selectedProductData.key] || []).map((item, i) => (
-                  <div key={i} className="mt-1 grid grid-cols-3 gap-2 items-center">
-                    <input value={item.name} onChange={(e) => updateOtherCost(selectedProductData.key, i, "name", e.target.value)} className={inputClass} />
-                    <input type="number" value={item.amount} onChange={(e) => updateOtherCost(selectedProductData.key, i, "amount", e.target.value)} className={inputClass} placeholder="Amount (€)" />
-                    <button onClick={() => removeOtherCostFromProduct(selectedProductData.key, i)} className="rounded bg-red-100 px-3 py-2 text-sm text-red-700">Remove</button>
+                  <div>
+                    <div className="mb-1 text-sm">Source</div>
+                    <select value={newProduct.source} onChange={(e) => setNewProduct({ ...newProduct, source: e.target.value as "fillet" | "trim" })} className={inputClass}>
+                      <option value="trim">Trim</option>
+                      <option value="fillet">Fillet</option>
+                    </select>
                   </div>
-                ))}
-                <div className="mt-3 grid grid-cols-3 gap-2 items-center">
-                  <input value={newOtherCostByProduct[selectedProductData.key]?.name || ""} onChange={(e) => setNewOtherCostByProduct((prev) => ({ ...prev, [selectedProductData.key]: { ...(prev[selectedProductData.key] || { amount: 0 }), name: e.target.value } }))} className={inputClass} placeholder="Other cost name" />
-                  <input type="number" value={newOtherCostByProduct[selectedProductData.key]?.amount || 0} onChange={(e) => setNewOtherCostByProduct((prev) => ({ ...prev, [selectedProductData.key]: { ...(prev[selectedProductData.key] || { name: "" }), amount: Number(e.target.value) || 0 } }))} className={inputClass} placeholder="Amount (€)" />
-                  <button onClick={() => addOtherCostToProduct(selectedProductData.key)} className="rounded bg-slate-700 px-3 py-2 text-sm text-white">+ Add Other Cost</button>
+                  <div>
+                    <div className="mb-1 text-sm">Fish per Unit (kg)</div>
+                    <input type="number" value={newProduct.fishPerUnitKg} onChange={(e) => setNewProduct({ ...newProduct, fishPerUnitKg: Number(e.target.value) || 0 })} className={inputClass} />
+                  </div>
+                  <div>
+                    <div className="mb-1 text-sm">Sell Price (€)</div>
+                    <input type="number" value={newProduct.price} onChange={(e) => setNewProduct({ ...newProduct, price: Number(e.target.value) || 0 })} className={inputClass} />
+                  </div>
                 </div>
+                <div>
+                  <div className="mb-1 text-sm">Note</div>
+                  <input value={newProduct.note} onChange={(e) => setNewProduct({ ...newProduct, note: e.target.value })} className={inputClass} />
+                </div>
+                <button
+                  onClick={() => {
+                    if (!newProduct.key || !newProduct.name) return;
+                    setCustomProducts((prev) => [
+                      ...prev,
+                      {
+                        ...newProduct,
+                        species: [newProduct.species],
+                        machines: newProduct.source === "fillet" ? ["filleting", "packing"] : ["mincer", "packing"],
+                      },
+                    ]);
+                    setNewProduct({ key: "", name: "", source: "trim", species: fishType, fishPerUnitKg: 0, price: 0, note: "" });
+                  }}
+                  className="rounded bg-green-600 px-3 py-2 text-sm text-white"
+                >
+                  Save Product
+                </button>
               </div>
-            </div>
-          )}
-        </div>
-
-        <div className={cardClass}>
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold">Save & Compare</h2>
-            <div className="flex flex-wrap gap-2">
-              <button onClick={saveScenario} className="rounded bg-blue-600 px-3 py-2 text-sm text-white">Save Scenario</button>
-              <button onClick={() => setShowReportView((s) => !s)} className="rounded bg-slate-700 px-3 py-2 text-sm text-white">{showReportView ? "Hide Report" : "View Report"}</button>
-              <button onClick={exportToCsv} className="rounded bg-emerald-600 px-3 py-2 text-sm text-white">Export</button>
-            </div>
+            )}
           </div>
 
-          {showReportView && (
-            <div className="mt-4 overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b text-left">
-                    <th className="py-2">Species</th>
-                    <th>Product</th>
-                    <th>Weight</th>
-                    <th>Profit</th>
-                    <th>Cost/Unit</th>
-                    <th></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {savedScenarios.map((s) => (
-                    <tr key={s.id} className="border-b">
-                      <td className="py-2">{s.species}</td>
-                      <td>{s.product}</td>
-                      <td>{s.weight}</td>
-                      <td>{formatMoney(s.profit)}</td>
-                      <td>{formatMoney(s.costPerUnit)}</td>
-                      <td>
-                        <button onClick={() => deleteScenario(s.id)} className="text-xs text-red-600">Delete</button>
-                      </td>
-                    </tr>
+          <div className={`${cardClass} ${selectedProductData ? (currentProfitPerUnit >= 0 ? "border-green-300 bg-green-50" : "border-red-300 bg-red-50") : ""}`}>
+            <h2 className="text-lg font-semibold">Selected Product</h2>
+            {!selectedProductData ? (
+              <p className="mt-2 text-sm text-slate-600">Select a product to see ingredients and costs.</p>
+            ) : (
+              <div className="mt-3 space-y-4">
+                <div>
+                  <div className="font-medium">{selectedProductData.name}</div>
+                  <div className="text-sm text-slate-500">{selectedProductData.note}</div>
+                </div>
+
+                <div className="text-sm text-slate-600">
+                  Units: <strong>{currentUnits}</strong> | Fish cost/unit: <strong>{formatMoney(getProductFishCostPerUnit(selectedProductData))}</strong> | Labour/unit: <strong>{formatMoney(getProductLabourCostPerUnit(selectedProductData))}</strong> | Ingredients/unit: <strong>{formatMoney(getProductIngredientTotal(selectedProductData.key))}</strong> | Other costs/unit: <strong>{formatMoney(getProductOtherCostTotal(selectedProductData.key))}</strong> | Profit/unit: <strong className={currentProfitPerUnit >= 0 ? "text-green-700" : "text-red-700"}>{formatMoney(currentProfitPerUnit)}</strong>
+                </div>
+
+                <div>
+                  <div className="mb-2 text-sm font-semibold">Labour Breakdown</div>
+                  <div className="mb-3 grid grid-cols-4 gap-2 items-end">
+                    <div>
+                      <div className="mb-1 text-xs text-slate-500">Hourly Rate (€)</div>
+                      <input type="number" value={hourlyRate} onChange={(e) => setHourlyRate(Number(e.target.value) || 0)} className={inputClass} />
+                    </div>
+                    <div>
+                      <div className="mb-1 text-xs text-slate-500">Operators</div>
+                      <input type="number" value={operatorAmount} onChange={(e) => setOperatorAmount(Math.max(1, Number(e.target.value) || 1))} className={inputClass} />
+                    </div>
+                    <div className="text-sm text-slate-600">Labour total: <strong>{formatMoney(currentLabourTotal)}</strong></div>
+                    <div className="text-sm text-slate-600">Labour/unit: <strong>{formatMoney(getProductLabourCostPerUnit(selectedProductData))}</strong></div>
+                  </div>
+
+                  <div className="space-y-2">
+                    {selectedProductData.machines.map((machine) => (
+                      <div key={machine} className="grid grid-cols-3 gap-2 items-center">
+                        <div className="capitalize text-sm text-slate-700">{machine}</div>
+                        <input type="number" value={machineStaffing[machine] || 0} onChange={(e) => setMachineStaffing((prev) => ({ ...prev, [machine]: Number(e.target.value) || 0 }))} className={inputClass} placeholder="Staff" />
+                        <input type="number" value={machineHours[machine] || 0} onChange={(e) => setMachineHours((prev) => ({ ...prev, [machine]: Number(e.target.value) || 0 }))} className={inputClass} placeholder="Hours" />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <div className="mb-2 text-sm font-semibold">Extra Labour</div>
+                  {(productExtraLabour[selectedProductData.key] || []).map((item, i) => (
+                    <div key={i} className="mt-1 grid grid-cols-5 gap-2 items-center">
+                      <input value={item.name} onChange={(e) => updateExtraLabour(selectedProductData.key, i, "name", e.target.value)} className={inputClass} placeholder="Task" />
+                      <input type="number" value={item.staff} onChange={(e) => updateExtraLabour(selectedProductData.key, i, "staff", e.target.value)} className={inputClass} placeholder="Staff" />
+                      <input type="number" value={item.hours} onChange={(e) => updateExtraLabour(selectedProductData.key, i, "hours", e.target.value)} className={inputClass} placeholder="Hours" />
+                      <input type="number" value={item.rate} onChange={(e) => updateExtraLabour(selectedProductData.key, i, "rate", e.target.value)} className={inputClass} placeholder="Rate" />
+                      <button onClick={() => removeExtraLabourFromProduct(selectedProductData.key, i)} className="rounded bg-red-100 px-3 py-2 text-sm text-red-700">Remove</button>
+                    </div>
                   ))}
-                </tbody>
-              </table>
+                  <div className="mt-3 grid grid-cols-5 gap-2 items-center">
+                    <input value={newExtraLabourByProduct[selectedProductData.key]?.name || ""} onChange={(e) => setNewExtraLabourByProduct((prev) => ({ ...prev, [selectedProductData.key]: { ...(prev[selectedProductData.key] || { staff: 0, hours: 0, rate: hourlyRate }), name: e.target.value } }))} className={inputClass} placeholder="Extra labour task" />
+                    <input type="number" value={newExtraLabourByProduct[selectedProductData.key]?.staff || 0} onChange={(e) => setNewExtraLabourByProduct((prev) => ({ ...prev, [selectedProductData.key]: { ...(prev[selectedProductData.key] || { name: "", hours: 0, rate: hourlyRate }), staff: Number(e.target.value) || 0 } }))} className={inputClass} placeholder="Staff" />
+                    <input type="number" value={newExtraLabourByProduct[selectedProductData.key]?.hours || 0} onChange={(e) => setNewExtraLabourByProduct((prev) => ({ ...prev, [selectedProductData.key]: { ...(prev[selectedProductData.key] || { name: "", staff: 0, rate: hourlyRate }), hours: Number(e.target.value) || 0 } }))} className={inputClass} placeholder="Hours" />
+                    <input type="number" value={newExtraLabourByProduct[selectedProductData.key]?.rate || hourlyRate} onChange={(e) => setNewExtraLabourByProduct((prev) => ({ ...prev, [selectedProductData.key]: { ...(prev[selectedProductData.key] || { name: "", staff: 0, hours: 0 }), rate: Number(e.target.value) || 0 } }))} className={inputClass} placeholder="Rate (€)" />
+                    <button onClick={() => addExtraLabourToProduct(selectedProductData.key)} className="rounded bg-slate-700 px-3 py-2 text-sm text-white">+ Add Labour</button>
+                  </div>
+                </div>
+
+                <div>
+                  <div className="mb-2 text-sm font-semibold">Ingredients Breakdown</div>
+                  {selectedProductIngredients.length === 0 ? (
+                    <p className="text-sm text-slate-500">No ingredients added yet</p>
+                  ) : (
+                    <>
+                      {selectedProductIngredients.map((item, i) => (
+                        <div key={i} className="mt-1 grid grid-cols-4 gap-2 items-center">
+                          <input value={item.name} onChange={(e) => updateIngredient(selectedProductData.key, i, "name", e.target.value)} className={inputClass} />
+                          <input type="number" value={item.quantity} onChange={(e) => updateIngredient(selectedProductData.key, i, "quantity", e.target.value)} className={inputClass} placeholder="Qty" />
+                          <input type="number" value={item.price} onChange={(e) => updateIngredient(selectedProductData.key, i, "price", e.target.value)} className={inputClass} placeholder="Price" />
+                          <button onClick={() => removeIngredientFromProduct(selectedProductData.key, i)} className="rounded bg-red-100 px-3 py-2 text-sm text-red-700">Remove</button>
+                        </div>
+                      ))}
+                      <div className="mt-2 text-sm text-slate-700">
+                        Ingredients total per unit: <strong>{formatMoney(getProductIngredientTotal(selectedProductData.key))}</strong>
+                      </div>
+                    </>
+                  )}
+
+                  <div className="mt-3 grid grid-cols-4 gap-2 items-center">
+                    <input value={newIngredientByProduct[selectedProductData.key]?.name || ""} onChange={(e) => setNewIngredientByProduct((prev) => ({ ...prev, [selectedProductData.key]: { ...(prev[selectedProductData.key] || { quantity: 0, price: 0 }), name: e.target.value } }))} className={inputClass} placeholder="Ingredient name" />
+                    <input type="number" value={newIngredientByProduct[selectedProductData.key]?.quantity || 0} onChange={(e) => setNewIngredientByProduct((prev) => ({ ...prev, [selectedProductData.key]: { ...(prev[selectedProductData.key] || { name: "", price: 0 }), quantity: Number(e.target.value) || 0 } }))} className={inputClass} placeholder="Qty" />
+                    <input type="number" value={newIngredientByProduct[selectedProductData.key]?.price || 0} onChange={(e) => setNewIngredientByProduct((prev) => ({ ...prev, [selectedProductData.key]: { ...(prev[selectedProductData.key] || { name: "", quantity: 0 }), price: Number(e.target.value) || 0 } }))} className={inputClass} placeholder="Price" />
+                    <button onClick={() => addIngredientToProduct(selectedProductData.key)} className="rounded bg-green-600 px-3 py-2 text-sm text-white">+ Add Ingredient</button>
+                  </div>
+                </div>
+
+                <div>
+                  <div className="mb-2 text-sm font-semibold">Other Costs</div>
+                  {(productOtherCosts[selectedProductData.key] || []).map((item, i) => (
+                    <div key={i} className="mt-1 grid grid-cols-3 gap-2 items-center">
+                      <input value={item.name} onChange={(e) => updateOtherCost(selectedProductData.key, i, "name", e.target.value)} className={inputClass} />
+                      <input type="number" value={item.amount} onChange={(e) => updateOtherCost(selectedProductData.key, i, "amount", e.target.value)} className={inputClass} placeholder="Amount (€)" />
+                      <button onClick={() => removeOtherCostFromProduct(selectedProductData.key, i)} className="rounded bg-red-100 px-3 py-2 text-sm text-red-700">Remove</button>
+                    </div>
+                  ))}
+                  <div className="mt-3 grid grid-cols-3 gap-2 items-center">
+                    <input value={newOtherCostByProduct[selectedProductData.key]?.name || ""} onChange={(e) => setNewOtherCostByProduct((prev) => ({ ...prev, [selectedProductData.key]: { ...(prev[selectedProductData.key] || { amount: 0 }), name: e.target.value } }))} className={inputClass} placeholder="Other cost name" />
+                    <input type="number" value={newOtherCostByProduct[selectedProductData.key]?.amount || 0} onChange={(e) => setNewOtherCostByProduct((prev) => ({ ...prev, [selectedProductData.key]: { ...(prev[selectedProductData.key] || { name: "" }), amount: Number(e.target.value) || 0 } }))} className={inputClass} placeholder="Amount (€)" />
+                    <button onClick={() => addOtherCostToProduct(selectedProductData.key)} className="rounded bg-slate-700 px-3 py-2 text-sm text-white">+ Add Other Cost</button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div className={cardClass}>
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-semibold">Save & Compare</h2>
+              <div className="flex flex-wrap gap-2">
+                <button onClick={saveScenario} className="rounded bg-blue-600 px-3 py-2 text-sm text-white">Save Scenario</button>
+                <button onClick={() => setShowReportView((s) => !s)} className="rounded bg-slate-700 px-3 py-2 text-sm text-white">{showReportView ? "Hide Report" : "View Report"}</button>
+                <button onClick={exportToCsv} className="rounded bg-emerald-600 px-3 py-2 text-sm text-white">Export</button>
+              </div>
             </div>
-          )}
+
+            {showReportView && (
+              <div className="mt-4 overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b text-left">
+                      <th className="py-2">Species</th>
+                      <th>Product</th>
+                      <th>Weight</th>
+                      <th>Profit</th>
+                      <th>Cost/Unit</th>
+                      <th></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {savedScenarios.map((s) => (
+                      <tr key={s.id} className="border-b">
+                        <td className="py-2">{s.species}</td>
+                        <td>{s.product}</td>
+                        <td>{s.weight}</td>
+                        <td>{formatMoney(s.profit)}</td>
+                        <td>{formatMoney(s.costPerUnit)}</td>
+                        <td>
+                          <button onClick={() => deleteScenario(s.id)} className="text-xs text-red-600">Delete</button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
         </div>
       </div>
-    </div>
 
       {/* FOOTER */}
       <div className="bg-white border-t mt-10">
