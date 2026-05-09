@@ -544,6 +544,7 @@ export default function FishProductCalculatorBasic() {
             </div>
             <div className="flex flex-wrap gap-x-4 gap-y-2 text-sm items-center">
               <a href="/" className="hover:underline">Home</a>
+              <a href="/tutorial" className="hover:underline">Tutorial</a>
               <a href="/privacy" className="hover:underline">Privacy</a>
               <a href="/terms" className="hover:underline">Terms</a>
               <a href="/disclaimer" className="hover:underline">Disclaimer</a>
