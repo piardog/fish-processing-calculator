@@ -638,7 +638,19 @@ export default function FishProductCalculatorBasic() {
 
           <div className="mt-6 rounded-xl border border-slate-700 bg-slate-800 p-5 text-sm leading-7 text-slate-200 max-w-3xl">
             <p>
-              This tool is currently being tested and refined. If you would like access, or if you have feedback from a fish processing or seafood production background, please contact Dan at info@moonblogger.com.
+              <div className="mt-6 rounded-xl border border-slate-700 bg-slate-800 p-5 text-sm leading-7 text-slate-200 max-w-3xl">
+  
+   <p>
+  Built for seafood processors, factories, fishermen, trawler owners, and production planning.
+  <br /><br />
+  This calculator helps estimate fish yields, labour costs, production costs, and break-even pricing before processing begins.
+  <br /><br />
+  Use the Tutorial section above to learn how the calculator works step-by-step.
+  <br /><br />
+  For enquiries or industry feedback, please contact Dan at info@moonblogger.com.
+</p>
+  
+</div>
             </p>
           </div>
         </div>
