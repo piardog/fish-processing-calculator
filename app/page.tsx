@@ -308,12 +308,35 @@ export default function FishProductCalculatorBasic() {
     return units > 0 ? totalLabour / units : 0;
   };
 
-  const getProductProfitPerUnit = (product: Product) => {
+  const getProductBreakEvenPrice = (product: Product) => {
     const fish = getProductFishCostPerUnit(product);
     const ingredient = getProductIngredientTotal(product.key);
     const other = getProductOtherCostTotal(product.key);
     const labour = getProductLabourCostPerUnit(product);
-    return product.price - fish - ingredient - other - labour;
+    return fish + ingredient + other + labour;
+  };
+
+  const getProductProfitPerUnit = (product: Product) => {
+    return product.price - getProductBreakEvenPrice(product);
+  };
+
+  const getProductSafetyMargin = (product: Product) => {
+    const breakEven = getProductBreakEvenPrice(product);
+    return product.price - breakEven;
+  };
+
+  const getProductMarginPercent = (product: Product) => {
+    if (product.price <= 0) return 0;
+    return (getProductProfitPerUnit(product) / product.price) * 100;
+  };
+
+  const getProductBreakEvenStatus = (product: Product) => {
+    const safety = getProductSafetyMargin(product);
+    const marginPercent = getProductMarginPercent(product);
+
+    if (safety < 0) return { label: "Below break-even", className: "bg-red-100 text-red-800 border-red-200" };
+    if (marginPercent < 10) return { label: "Very tight", className: "bg-amber-100 text-amber-800 border-amber-200" };
+    return { label: "Safe", className: "bg-green-100 text-green-800 border-green-200" };
   };
 
   const updateIngredient = (productKey: string, index: number, field: keyof Ingredient, value: string) => {
@@ -500,6 +523,10 @@ export default function FishProductCalculatorBasic() {
   };
 
   const currentProfitPerUnit = selectedProductData ? getProductProfitPerUnit(selectedProductData) : 0;
+  const currentBreakEvenPrice = selectedProductData ? getProductBreakEvenPrice(selectedProductData) : 0;
+  const currentSafetyMargin = selectedProductData ? getProductSafetyMargin(selectedProductData) : 0;
+  const currentMarginPercent = selectedProductData ? getProductMarginPercent(selectedProductData) : 0;
+  const currentBreakEvenStatus = selectedProductData ? getProductBreakEvenStatus(selectedProductData) : null;
 
   if (authStatus === "checking") {
     return (
@@ -579,13 +606,7 @@ export default function FishProductCalculatorBasic() {
 
           <div className="mt-6 rounded-xl border border-slate-700 bg-slate-800 p-5 text-sm leading-7 text-slate-200 max-w-3xl">
             <p>
-              Built for seafood processors, factories, and production planning.
-
-This calculator helps estimate fish yields, labour costs, production costs, and profit before processing begins.
-
-Use the Tutorial section above to learn how the calculator works step-by-step.
-
-For enquiries or industry feedback, please contact Dan at info@moonblogger.com.
+              This tool is currently being tested and refined. If you would like access, or if you have feedback from a fish processing or seafood production background, please contact Dan at info@moonblogger.com.
             </p>
           </div>
         </div>
@@ -833,6 +854,49 @@ For enquiries or industry feedback, please contact Dan at info@moonblogger.com.
 
                 <div className="text-sm text-slate-600">
                   Units: <strong>{currentUnits}</strong> | Fish cost/unit: <strong>{formatMoney(getProductFishCostPerUnit(selectedProductData))}</strong> | Labour/unit: <strong>{formatMoney(getProductLabourCostPerUnit(selectedProductData))}</strong> | Ingredients/unit: <strong>{formatMoney(getProductIngredientTotal(selectedProductData.key))}</strong> | Other costs/unit: <strong>{formatMoney(getProductOtherCostTotal(selectedProductData.key))}</strong> | Profit/unit: <strong className={currentProfitPerUnit >= 0 ? "text-green-700" : "text-red-700"}>{formatMoney(currentProfitPerUnit)}</strong>
+                </div>
+
+                <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+                  <div className="mb-3 flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+                    <div>
+                      <h3 className="text-base font-semibold">Break-Even Analysis</h3>
+                      <p className="text-sm text-slate-600">
+                        This shows the minimum selling price needed before this product starts making money.
+                      </p>
+                    </div>
+                    {currentBreakEvenStatus && (
+                      <span className={`inline-flex rounded-full border px-3 py-1 text-sm font-semibold ${currentBreakEvenStatus.className}`}>
+                        {currentBreakEvenStatus.label}
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="grid gap-3 md:grid-cols-4">
+                    <div className="rounded-xl bg-slate-50 p-3">
+                      <div className="text-xs text-slate-500">Break-even price/unit</div>
+                      <div className="text-lg font-bold text-slate-900">{formatMoney(currentBreakEvenPrice)}</div>
+                    </div>
+                    <div className="rounded-xl bg-slate-50 p-3">
+                      <div className="text-xs text-slate-500">Current sell price/unit</div>
+                      <div className="text-lg font-bold text-slate-900">{formatMoney(selectedProductData.price)}</div>
+                    </div>
+                    <div className="rounded-xl bg-slate-50 p-3">
+                      <div className="text-xs text-slate-500">Safety margin/unit</div>
+                      <div className={`text-lg font-bold ${currentSafetyMargin >= 0 ? "text-green-700" : "text-red-700"}`}>
+                        {formatMoney(currentSafetyMargin)}
+                      </div>
+                    </div>
+                    <div className="rounded-xl bg-slate-50 p-3">
+                      <div className="text-xs text-slate-500">Profit margin</div>
+                      <div className={`text-lg font-bold ${currentMarginPercent >= 0 ? "text-green-700" : "text-red-700"}`}>
+                        {currentMarginPercent.toFixed(1)}%
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="mt-3 text-sm text-slate-600">
+                    If you sell below <strong>{formatMoney(currentBreakEvenPrice)}</strong> per unit, this product is likely to lose money based on the current fish, labour, ingredient, and other cost figures.
+                  </div>
                 </div>
 
                 <div>
