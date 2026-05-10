@@ -955,6 +955,12 @@ export default function FishProductCalculatorBasic() {
                   </div>
 
                   <div className="space-y-2">
+                    <div className="grid grid-cols-3 gap-2 mb-2 text-xs font-semibold text-slate-500">
+                      <div>Machine</div>
+                      <div>Staff Required</div>
+                      <div>Hours Used</div>
+                    </div>
+
                     {selectedProductData.machines.map((machine) => (
                       <div key={machine} className="grid grid-cols-3 gap-2 items-center">
                         <div className="capitalize text-sm text-slate-700">{machine}</div>
@@ -970,32 +976,44 @@ export default function FishProductCalculatorBasic() {
                   {(productExtraLabour[selectedProductData.key] || []).map((item, i) => (
                     <div key={i} className="mt-1 grid grid-cols-5 gap-2 items-center">
                       <input value={item.name} onChange={(e) => updateExtraLabour(selectedProductData.key, i, "name", e.target.value)} className={inputClass} placeholder="Task" />
-                      <input type="number" value={item.staff} onChange={(e) => updateExtraLabour(selectedProductData.key, i, "staff", e.target.value)} className={inputClass} placeholder="Staff" />
-                      <input type="number" value={item.hours} onChange={(e) => updateExtraLabour(selectedProductData.key, i, "hours", e.target.value)} className={inputClass} placeholder="Hours" />
-                      <input type="number" value={item.rate} onChange={(e) => updateExtraLabour(selectedProductData.key, i, "rate", e.target.value)} className={inputClass} placeholder="Rate" />
+                      <input type="number" value={item.staff || ""} onChange={(e) => updateExtraLabour(selectedProductData.key, i, "staff", e.target.value)} className={inputClass} placeholder="Staff" />
+                      <input type="number" value={item.hours || ""} onChange={(e) => updateExtraLabour(selectedProductData.key, i, "hours", e.target.value)} className={inputClass} placeholder="Hours" />
+                      <input type="number" value={item.rate || ""} onChange={(e) => updateExtraLabour(selectedProductData.key, i, "rate", e.target.value)} className={inputClass} placeholder="Rate (€)" />
                       <button onClick={() => removeExtraLabourFromProduct(selectedProductData.key, i)} className="rounded bg-red-100 px-3 py-2 text-sm text-red-700">Remove</button>
                     </div>
                   ))}
                   <div className="mt-3 grid grid-cols-5 gap-2 items-center">
                     <input value={newExtraLabourByProduct[selectedProductData.key]?.name || ""} onChange={(e) => setNewExtraLabourByProduct((prev) => ({ ...prev, [selectedProductData.key]: { ...(prev[selectedProductData.key] || { staff: 0, hours: 0, rate: hourlyRate }), name: e.target.value } }))} className={inputClass} placeholder="Extra labour task" />
-                    <input type="number" value={newExtraLabourByProduct[selectedProductData.key]?.staff || 0} onChange={(e) => setNewExtraLabourByProduct((prev) => ({ ...prev, [selectedProductData.key]: { ...(prev[selectedProductData.key] || { name: "", hours: 0, rate: hourlyRate }), staff: Number(e.target.value) || 0 } }))} className={inputClass} placeholder="Staff" />
-                    <input type="number" value={newExtraLabourByProduct[selectedProductData.key]?.hours || 0} onChange={(e) => setNewExtraLabourByProduct((prev) => ({ ...prev, [selectedProductData.key]: { ...(prev[selectedProductData.key] || { name: "", staff: 0, rate: hourlyRate }), hours: Number(e.target.value) || 0 } }))} className={inputClass} placeholder="Hours" />
-                    <input type="number" value={newExtraLabourByProduct[selectedProductData.key]?.rate || hourlyRate} onChange={(e) => setNewExtraLabourByProduct((prev) => ({ ...prev, [selectedProductData.key]: { ...(prev[selectedProductData.key] || { name: "", staff: 0, hours: 0 }), rate: Number(e.target.value) || 0 } }))} className={inputClass} placeholder="Rate (€)" />
+                    <input type="number" value={newExtraLabourByProduct[selectedProductData.key]?.staff || ""} onChange={(e) => setNewExtraLabourByProduct((prev) => ({ ...prev, [selectedProductData.key]: { ...(prev[selectedProductData.key] || { name: "", hours: 0, rate: hourlyRate }), staff: Number(e.target.value) || 0 } }))} className={inputClass} placeholder="Staff" />
+                    <input type="number" value={newExtraLabourByProduct[selectedProductData.key]?.hours || ""} onChange={(e) => setNewExtraLabourByProduct((prev) => ({ ...prev, [selectedProductData.key]: { ...(prev[selectedProductData.key] || { name: "", staff: 0, rate: hourlyRate }), hours: Number(e.target.value) || 0 } }))} className={inputClass} placeholder="Hours" />
+                    <input type="number" value={newExtraLabourByProduct[selectedProductData.key]?.rate || ""} onChange={(e) => setNewExtraLabourByProduct((prev) => ({ ...prev, [selectedProductData.key]: { ...(prev[selectedProductData.key] || { name: "", staff: 0, hours: 0 }), rate: Number(e.target.value) || 0 } }))} className={inputClass} placeholder="Rate (€)" />
                     <button onClick={() => addExtraLabourToProduct(selectedProductData.key)} className="rounded bg-slate-700 px-3 py-2 text-sm text-white">+ Add Labour</button>
                   </div>
                 </div>
 
                 <div>
                   <div className="mb-2 text-sm font-semibold">Ingredients Breakdown</div>
+
+                  <div className="grid grid-cols-4 gap-2 mb-2 text-xs font-semibold text-slate-500">
+                    <div>Ingredient</div>
+                    <div>Qty per Unit</div>
+                    <div>Cost (€)</div>
+                    <div></div>
+                  </div>
                   {selectedProductIngredients.length === 0 ? (
                     <p className="text-sm text-slate-500">No ingredients added yet</p>
                   ) : (
                     <>
                       {selectedProductIngredients.map((item, i) => (
                         <div key={i} className="mt-1 grid grid-cols-4 gap-2 items-center">
-                          <input value={item.name} onChange={(e) => updateIngredient(selectedProductData.key, i, "name", e.target.value)} className={inputClass} />
-                          <input type="number" value={item.quantity} onChange={(e) => updateIngredient(selectedProductData.key, i, "quantity", e.target.value)} className={inputClass} placeholder="Qty" />
-                          <input type="number" value={item.price} onChange={(e) => updateIngredient(selectedProductData.key, i, "price", e.target.value)} className={inputClass} placeholder="Price" />
+                          <input
+                            value={item.name}
+                            onChange={(e) => updateIngredient(selectedProductData.key, i, "name", e.target.value)}
+                            className={inputClass}
+                            placeholder="Ingredient"
+                          />
+                          <input type="number" value={item.quantity || ""} onChange={(e) => updateIngredient(selectedProductData.key, i, "quantity", e.target.value)} className={inputClass} placeholder="Qty per Unit" />
+                          <input type="number" value={item.price || ""} onChange={(e) => updateIngredient(selectedProductData.key, i, "price", e.target.value)} className={inputClass} placeholder="Cost (€)" />
                           <button onClick={() => removeIngredientFromProduct(selectedProductData.key, i)} className="rounded bg-red-100 px-3 py-2 text-sm text-red-700">Remove</button>
                         </div>
                       ))}
@@ -1007,8 +1025,8 @@ export default function FishProductCalculatorBasic() {
 
                   <div className="mt-3 grid grid-cols-4 gap-2 items-center">
                     <input value={newIngredientByProduct[selectedProductData.key]?.name || ""} onChange={(e) => setNewIngredientByProduct((prev) => ({ ...prev, [selectedProductData.key]: { ...(prev[selectedProductData.key] || { quantity: 0, price: 0 }), name: e.target.value } }))} className={inputClass} placeholder="Ingredient name" />
-                    <input type="number" value={newIngredientByProduct[selectedProductData.key]?.quantity || 0} onChange={(e) => setNewIngredientByProduct((prev) => ({ ...prev, [selectedProductData.key]: { ...(prev[selectedProductData.key] || { name: "", price: 0 }), quantity: Number(e.target.value) || 0 } }))} className={inputClass} placeholder="Qty" />
-                    <input type="number" value={newIngredientByProduct[selectedProductData.key]?.price || 0} onChange={(e) => setNewIngredientByProduct((prev) => ({ ...prev, [selectedProductData.key]: { ...(prev[selectedProductData.key] || { name: "", quantity: 0 }), price: Number(e.target.value) || 0 } }))} className={inputClass} placeholder="Price" />
+                    <input type="number" value={newIngredientByProduct[selectedProductData.key]?.quantity || ""} onChange={(e) => setNewIngredientByProduct((prev) => ({ ...prev, [selectedProductData.key]: { ...(prev[selectedProductData.key] || { name: "", price: 0 }), quantity: Number(e.target.value) || 0 } }))} className={inputClass} placeholder="Qty per Unit" />
+                    <input type="number" value={newIngredientByProduct[selectedProductData.key]?.price || ""} onChange={(e) => setNewIngredientByProduct((prev) => ({ ...prev, [selectedProductData.key]: { ...(prev[selectedProductData.key] || { name: "", quantity: 0 }), price: Number(e.target.value) || 0 } }))} className={inputClass} placeholder="Cost (€)" />
                     <button onClick={() => addIngredientToProduct(selectedProductData.key)} className="rounded bg-green-600 px-3 py-2 text-sm text-white">+ Add Ingredient</button>
                   </div>
                 </div>
@@ -1017,14 +1035,19 @@ export default function FishProductCalculatorBasic() {
                   <div className="mb-2 text-sm font-semibold">Other Costs</div>
                   {(productOtherCosts[selectedProductData.key] || []).map((item, i) => (
                     <div key={i} className="mt-1 grid grid-cols-3 gap-2 items-center">
-                      <input value={item.name} onChange={(e) => updateOtherCost(selectedProductData.key, i, "name", e.target.value)} className={inputClass} />
-                      <input type="number" value={item.amount} onChange={(e) => updateOtherCost(selectedProductData.key, i, "amount", e.target.value)} className={inputClass} placeholder="Amount (€)" />
+                      <input
+                        value={item.name}
+                        onChange={(e) => updateOtherCost(selectedProductData.key, i, "name", e.target.value)}
+                        className={inputClass}
+                        placeholder="Other cost"
+                      />
+                      <input type="number" value={item.amount || ""} onChange={(e) => updateOtherCost(selectedProductData.key, i, "amount", e.target.value)} className={inputClass} placeholder="Amount (€)" />
                       <button onClick={() => removeOtherCostFromProduct(selectedProductData.key, i)} className="rounded bg-red-100 px-3 py-2 text-sm text-red-700">Remove</button>
                     </div>
                   ))}
                   <div className="mt-3 grid grid-cols-3 gap-2 items-center">
                     <input value={newOtherCostByProduct[selectedProductData.key]?.name || ""} onChange={(e) => setNewOtherCostByProduct((prev) => ({ ...prev, [selectedProductData.key]: { ...(prev[selectedProductData.key] || { amount: 0 }), name: e.target.value } }))} className={inputClass} placeholder="Other cost name" />
-                    <input type="number" value={newOtherCostByProduct[selectedProductData.key]?.amount || 0} onChange={(e) => setNewOtherCostByProduct((prev) => ({ ...prev, [selectedProductData.key]: { ...(prev[selectedProductData.key] || { name: "" }), amount: Number(e.target.value) || 0 } }))} className={inputClass} placeholder="Amount (€)" />
+                    <input type="number" value={newOtherCostByProduct[selectedProductData.key]?.amount || ""} onChange={(e) => setNewOtherCostByProduct((prev) => ({ ...prev, [selectedProductData.key]: { ...(prev[selectedProductData.key] || { name: "" }), amount: Number(e.target.value) || 0 } }))} className={inputClass} placeholder="Amount (€)" />
                     <button onClick={() => addOtherCostToProduct(selectedProductData.key)} className="rounded bg-slate-700 px-3 py-2 text-sm text-white">+ Add Other Cost</button>
                   </div>
                 </div>
