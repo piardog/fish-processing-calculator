@@ -10,7 +10,7 @@ type Product = {
   source: "fillet" | "trim";
   species: string[];
   fishPerUnitKg: number;
-  price: number;
+  targetMargin: number;
   machines: string[];
   note?: string;
 };
@@ -55,6 +55,7 @@ export default function FishProductCalculatorBasic() {
   const [fishSize, setFishSize] = useState("medium");
   const [hourlyRate, setHourlyRate] = useState(15);
   const [operatorAmount, setOperatorAmount] = useState(1);
+  const [liveTargetMargin, setLiveTargetMargin] = useState(15);
 
   const [fishProfiles, setFishProfiles] = useState<Record<string, { label: string; filletPct: number; trimPct: number; fishCostPerKg: number }>>({
     haddock: { label: "Haddock", filletPct: 42, trimPct: 18, fishCostPerKg: 4 },
@@ -100,7 +101,7 @@ export default function FishProductCalculatorBasic() {
       source: "fillet",
       species: ["haddock"],
       fishPerUnitKg: 0.18,
-      price: 4.5,
+      targetMargin: 20,
       machines: ["filleting", "packing"],
       note: "180g portion",
     },
@@ -110,7 +111,7 @@ export default function FishProductCalculatorBasic() {
       source: "fillet",
       species: ["haddock"],
       fishPerUnitKg: 0.16,
-      price: 3.8,
+      targetMargin: 18,
       machines: ["filleting", "breading", "packing"],
       note: "160g fish portion",
     },
@@ -120,7 +121,7 @@ export default function FishProductCalculatorBasic() {
       source: "trim",
       species: ["haddock"],
       fishPerUnitKg: 0.025,
-      price: 0.35,
+      targetMargin: 15,
       machines: ["mincer", "mixer", "former", "breading", "packing"],
       note: "25g fish per finger",
     },
@@ -130,7 +131,7 @@ export default function FishProductCalculatorBasic() {
       source: "trim",
       species: ["haddock"],
       fishPerUnitKg: 0.072,
-      price: 1.6,
+      targetMargin: 12,
       machines: ["mincer", "mixer", "packing"],
       note: "120g cake at 60% fish",
     },
@@ -140,7 +141,7 @@ export default function FishProductCalculatorBasic() {
       source: "fillet",
       species: ["herring"],
       fishPerUnitKg: 0.14,
-      price: 2.2,
+      targetMargin: 18,
       machines: ["filleting", "packing"],
       note: "Fresh packed herring fillets",
     },
@@ -150,7 +151,7 @@ export default function FishProductCalculatorBasic() {
       source: "fillet",
       species: ["herring"],
       fishPerUnitKg: 0.2,
-      price: 3.1,
+      targetMargin: 22,
       machines: ["filleting", "smoking", "packing"],
       note: "Split and smoked herring",
     },
@@ -163,7 +164,7 @@ export default function FishProductCalculatorBasic() {
     source: "trim" as "fillet" | "trim",
     species: "haddock",
     fishPerUnitKg: 0,
-    price: 0,
+    targetMargin: 15,
     note: "",
   });
 
@@ -316,18 +317,24 @@ export default function FishProductCalculatorBasic() {
     return fish + ingredient + other + labour;
   };
 
+  const getRequiredSellPrice = (product: Product) => {
+    const breakEven = getProductBreakEvenPrice(product);
+    return breakEven * (1 + liveTargetMargin / 100);
+  };
+
   const getProductProfitPerUnit = (product: Product) => {
-    return product.price - getProductBreakEvenPrice(product);
+    return getRequiredSellPrice(product) - getProductBreakEvenPrice(product);
   };
 
   const getProductSafetyMargin = (product: Product) => {
     const breakEven = getProductBreakEvenPrice(product);
-    return product.price - breakEven;
+    return getRequiredSellPrice(product) - breakEven;
   };
 
   const getProductMarginPercent = (product: Product) => {
-    if (product.price <= 0) return 0;
-    return (getProductProfitPerUnit(product) / product.price) * 100;
+    const requiredSellPrice = getRequiredSellPrice(product);
+    if (requiredSellPrice <= 0) return 0;
+    return (getProductProfitPerUnit(product) / requiredSellPrice) * 100;
   };
 
   const getProductBreakEvenStatus = (product: Product) => {
@@ -337,6 +344,12 @@ export default function FishProductCalculatorBasic() {
     if (safety < 0) return { label: "Below break-even", className: "bg-red-100 text-red-800 border-red-200" };
     if (marginPercent < 10) return { label: "Very tight", className: "bg-amber-100 text-amber-800 border-amber-200" };
     return { label: "Safe", className: "bg-green-100 text-green-800 border-green-200" };
+  };
+
+  const getSavedScenarioStatusClass = (status: string) => {
+    if (status === "Below break-even") return "text-red-700 font-semibold";
+    if (status === "Very tight") return "text-amber-700 font-semibold";
+    return "text-green-700 font-semibold";
   };
 
   const updateIngredient = (productKey: string, index: number, field: keyof Ingredient, value: string) => {
@@ -426,11 +439,13 @@ export default function FishProductCalculatorBasic() {
       product: selectedProductData.name,
       weight: safeFishWeight,
       profit: getProductProfitPerUnit(selectedProductData) * getProductUnits(selectedProductData),
-      costPerUnit:
-        getProductFishCostPerUnit(selectedProductData) +
-        getProductIngredientTotal(selectedProductData.key) +
-        getProductOtherCostTotal(selectedProductData.key) +
-        getProductLabourCostPerUnit(selectedProductData),
+      costPerUnit: getProductBreakEvenPrice(selectedProductData),
+      requiredSellPrice: getRequiredSellPrice(selectedProductData),
+      targetMargin: liveTargetMargin,
+      breakEvenPrice: getProductBreakEvenPrice(selectedProductData),
+      safetyMargin: getProductSafetyMargin(selectedProductData),
+      marginPercent: getProductMarginPercent(selectedProductData),
+      status: getProductBreakEvenStatus(selectedProductData).label,
     };
     const { data, error } = await supabase
       .from("scenarios")
@@ -442,6 +457,12 @@ export default function FishProductCalculatorBasic() {
           weight: scenario.weight,
           profit: scenario.profit,
           cost_per_unit: scenario.costPerUnit,
+          required_sell_price: scenario.requiredSellPrice,
+          target_margin: scenario.targetMargin,
+          break_even_price: scenario.breakEvenPrice,
+          safety_margin: scenario.safetyMargin,
+          margin_percent: scenario.marginPercent,
+          status: scenario.status,
         },
       ])
       .select();
@@ -493,13 +514,17 @@ export default function FishProductCalculatorBasic() {
       return;
     }
 
-    const headers = ["Species", "Product", "Weight (kg)", "Profit (€)", "Cost / Unit (€)"];
+    const headers = ["Species", "Product", "Weight (kg)", "Break-even / Unit (€)", "Required Sell Price / Unit (€)", "Safety Margin / Unit (€)", "Profit (€)", "Margin %", "Status"];
     const rows = savedScenarios.map((s) => [
       s.species,
       s.product,
       s.weight,
-      s.profit.toFixed(2),
-      (s.cost_per_unit || s.costPerUnit).toFixed(2),
+      (s.break_even_price || s.cost_per_unit || s.costPerUnit || 0).toFixed(2),
+      (s.required_sell_price || 0).toFixed(2),
+      (s.safety_margin || 0).toFixed(2),
+      Number(s.profit || 0).toFixed(2),
+      Number(s.margin_percent || 0).toFixed(1),
+      s.status || "",
     ]);
 
     const csv = [headers, ...rows]
@@ -527,6 +552,13 @@ export default function FishProductCalculatorBasic() {
   const currentSafetyMargin = selectedProductData ? getProductSafetyMargin(selectedProductData) : 0;
   const currentMarginPercent = selectedProductData ? getProductMarginPercent(selectedProductData) : 0;
   const currentBreakEvenStatus = selectedProductData ? getProductBreakEvenStatus(selectedProductData) : null;
+
+  useEffect(() => {
+    const product = productsForSpecies.find((p) => p.key === selectedProduct);
+    if (product) {
+      setLiveTargetMargin(product.targetMargin);
+    }
+  }, [selectedProduct]);
 
   if (authStatus === "checking") {
     return (
@@ -812,8 +844,13 @@ export default function FishProductCalculatorBasic() {
                     <input type="number" value={newProduct.fishPerUnitKg} onChange={(e) => setNewProduct({ ...newProduct, fishPerUnitKg: Number(e.target.value) || 0 })} className={inputClass} />
                   </div>
                   <div>
-                    <div className="mb-1 text-sm">Sell Price (€)</div>
-                    <input type="number" value={newProduct.price} onChange={(e) => setNewProduct({ ...newProduct, price: Number(e.target.value) || 0 })} className={inputClass} />
+                    <div className="mb-1 text-sm">Target Margin %</div>
+                    <input
+                      type="number"
+                      value={newProduct.targetMargin}
+                      onChange={(e) => setNewProduct({ ...newProduct, targetMargin: Number(e.target.value) || 0 })}
+                      className={inputClass}
+                    />
                   </div>
                 </div>
                 <div>
@@ -831,7 +868,7 @@ export default function FishProductCalculatorBasic() {
                         machines: newProduct.source === "fillet" ? ["filleting", "packing"] : ["mincer", "packing"],
                       },
                     ]);
-                    setNewProduct({ key: "", name: "", source: "trim", species: fishType, fishPerUnitKg: 0, price: 0, note: "" });
+                    setNewProduct({ key: "", name: "", source: "trim", species: fishType, fishPerUnitKg: 0, targetMargin: 15, note: "" });
                   }}
                   className="rounded bg-green-600 px-3 py-2 text-sm text-white"
                 >
@@ -877,8 +914,8 @@ export default function FishProductCalculatorBasic() {
                       <div className="text-lg font-bold text-slate-900">{formatMoney(currentBreakEvenPrice)}</div>
                     </div>
                     <div className="rounded-xl bg-slate-50 p-3">
-                      <div className="text-xs text-slate-500">Current sell price/unit</div>
-                      <div className="text-lg font-bold text-slate-900">{formatMoney(selectedProductData.price)}</div>
+                      <div className="text-xs text-slate-500">Required sell price/unit</div>
+                      <div className="text-lg font-bold text-slate-900">{formatMoney(getRequiredSellPrice(selectedProductData))}</div>
                     </div>
                     <div className="rounded-xl bg-slate-50 p-3">
                       <div className="text-xs text-slate-500">Safety margin/unit</div>
@@ -887,15 +924,18 @@ export default function FishProductCalculatorBasic() {
                       </div>
                     </div>
                     <div className="rounded-xl bg-slate-50 p-3">
-                      <div className="text-xs text-slate-500">Profit margin</div>
-                      <div className={`text-lg font-bold ${currentMarginPercent >= 0 ? "text-green-700" : "text-red-700"}`}>
-                        {currentMarginPercent.toFixed(1)}%
-                      </div>
+                      <div className="text-xs text-slate-500 mb-2">Target margin %</div>
+                      <input
+                        type="number"
+                        value={liveTargetMargin}
+                        onChange={(e) => setLiveTargetMargin(Number(e.target.value) || 0)}
+                        className={inputClass}
+                      />
                     </div>
                   </div>
 
                   <div className="mt-3 text-sm text-slate-600">
-                    If you sell below <strong>{formatMoney(currentBreakEvenPrice)}</strong> per unit, this product is likely to lose money based on the current fish, labour, ingredient, and other cost figures.
+                    If your selling price falls below <strong>{formatMoney(currentBreakEvenPrice)}</strong> per unit, this product is likely to lose money based on the current fish, labour, ingredient, and other cost figures.
                   </div>
                 </div>
 
@@ -1010,8 +1050,12 @@ export default function FishProductCalculatorBasic() {
                       <th className="py-2">Species</th>
                       <th>Product</th>
                       <th>Weight</th>
+                      <th>Break-even/Unit</th>
+                      <th>Required Sell Price</th>
+                      <th>Safety Margin</th>
                       <th>Profit</th>
-                      <th>Cost/Unit</th>
+                      <th>Margin %</th>
+                      <th>Status</th>
                       <th></th>
                     </tr>
                   </thead>
@@ -1021,8 +1065,12 @@ export default function FishProductCalculatorBasic() {
                         <td className="py-2">{s.species}</td>
                         <td>{s.product}</td>
                         <td>{s.weight}</td>
+                        <td>{formatMoney(s.break_even_price || s.cost_per_unit || s.costPerUnit)}</td>
+                        <td>{formatMoney(s.required_sell_price || 0)}</td>
+                        <td className={(s.safety_margin || 0) >= 0 ? "text-green-700" : "text-red-700"}>{formatMoney(s.safety_margin || 0)}</td>
                         <td>{formatMoney(s.profit)}</td>
-                        <td>{formatMoney(s.cost_per_unit || s.costPerUnit)}</td>
+                        <td>{Number(s.margin_percent || 0).toFixed(1)}%</td>
+                        <td className={getSavedScenarioStatusClass(s.status || "")}>{s.status || ""}</td>
                         <td>
                           <button onClick={() => deleteScenario(s.id)} className="text-xs text-red-600">Delete</button>
                         </td>
