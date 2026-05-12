@@ -163,6 +163,35 @@ export default function FishProductCalculatorBasic() {
   ];
 
   const [customProducts, setCustomProducts] = useState<Product[]>([]);
+  const deleteCustomProduct = (productKey: string) => {
+  setCustomProducts((prev) =>
+    prev.filter((product) => product.key !== productKey)
+  );
+
+  setProductIngredients((prev) => {
+    const updated = { ...prev };
+    delete updated[productKey];
+    return updated;
+  });
+
+  setProductExtraLabour((prev) => {
+    const updated = { ...prev };
+    delete updated[productKey];
+    return updated;
+  });
+
+  setProductOtherCosts((prev) => {
+    const updated = { ...prev };
+    delete updated[productKey];
+    return updated;
+  });
+
+  if (selectedProduct === productKey) {
+    setSelectedProduct("");
+  }
+};
+  
+  
   const [newProduct, setNewProduct] = useState({
     key: "",
     name: "",
@@ -508,10 +537,37 @@ export default function FishProductCalculatorBasic() {
         trimPct: Number(newFish.trimPct) || 0,
         fishCostPerKg: Number(newFish.fishCostPerKg) || 0,
       },
+	  
+	  
     }));
     setNewFish({ key: "", label: "", filletPct: 0, trimPct: 0, fishCostPerKg: 0 });
     setShowAddSpecies(false);
   };
+  
+  const deleteFish = (fishKey: string) => {
+  const productsUsingFish = products.filter((product) =>
+    product.species.includes(fishKey)
+  );
+
+  if (productsUsingFish.length > 0) {
+    alert("You cannot delete this species while products are using it.");
+    return;
+  }
+
+  setFishProfiles((prev) => {
+    const updated = { ...prev };
+    delete updated[fishKey];
+    return updated;
+  });
+
+  if (fishType === fishKey) {
+    const remainingFish = Object.keys(fishProfiles).filter(
+      (f) => f !== fishKey
+    );
+
+    setFishType(remainingFish[0] || "");
+  }
+};
 
   const exportToCsv = () => {
     if (savedScenarios.length === 0) {
@@ -662,7 +718,7 @@ export default function FishProductCalculatorBasic() {
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-semibold">Start Point</h2>
               <button onClick={() => setShowAddSpecies((s) => !s)} className="rounded bg-slate-700 px-3 py-2 text-sm text-white">
-                {showAddSpecies ? "Hide" : "+ Add Species"}
+                {showAddSpecies ? "Hide" : "+ Add or Remove Species"}
               </button>
             </div>
             <div className="grid gap-3 md:grid-cols-2 mt-3">
@@ -814,6 +870,28 @@ export default function FishProductCalculatorBasic() {
                   </div>
                 </div>
                 <button onClick={addFish} className="rounded bg-blue-600 px-3 py-2 text-sm text-white">Save Species</button>
+				<div className="mt-4 space-y-2">
+  <div className="text-sm font-semibold">Existing Species</div>
+
+  {Object.entries(fishProfiles).map(([key, fish]) => (
+    <div
+      key={key}
+      className="flex items-center justify-between rounded-lg border border-slate-200 bg-slate-50 px-3 py-2"
+    >
+      <div>
+        <div className="font-medium text-sm">{fish.label}</div>
+        <div className="text-xs text-slate-500">{key}</div>
+      </div>
+
+      <button
+        onClick={() => deleteFish(key)}
+        className="rounded bg-red-100 px-3 py-2 text-sm text-red-700 hover:bg-red-200"
+      >
+        Delete
+      </button>
+    </div>
+  ))}
+</div>
               </div>
             )}
           </div>
@@ -822,7 +900,7 @@ export default function FishProductCalculatorBasic() {
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-semibold">Add Product</h2>
               <button onClick={() => setShowAddProduct((s) => !s)} className="rounded bg-slate-700 px-3 py-2 text-sm text-white">
-                {showAddProduct ? "Hide" : "+ Add Product"}
+                {showAddProduct ? "Hide" : "+ Add or Remove Product"}
               </button>
             </div>
             {showAddProduct && (
@@ -897,7 +975,21 @@ export default function FishProductCalculatorBasic() {
             ) : (
               <div className="mt-3 space-y-4">
                 <div>
-                  <div className="font-medium">{selectedProductData.name}</div>
+                 <div className="flex items-center justify-between">
+  <div>
+    <div className="font-medium">{selectedProductData.name}</div>
+    <div className="text-sm text-slate-500">{selectedProductData.note}</div>
+  </div>
+
+  {customProducts.some((p) => p.key === selectedProductData.key) && (
+    <button
+      onClick={() => deleteCustomProduct(selectedProductData.key)}
+      className="rounded bg-red-600 px-3 py-2 text-sm text-white hover:bg-red-700"
+    >
+      Delete Product
+    </button>
+  )}
+</div>
                   <div className="text-sm text-slate-500">{selectedProductData.note}</div>
                 </div>
 
