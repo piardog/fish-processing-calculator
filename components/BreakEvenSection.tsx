@@ -44,8 +44,9 @@ export default function BreakEvenSection({
         )}
       </div>
 
-      <div className="grid gap-3 md:grid-cols-4">
-        <div className="rounded-xl bg-slate-50 p-3">
+     
+	  <div className="grid min-w-[900px] grid-cols-4 gap-6">
+        <div className="rounded-xl bg-slate-50 p-4">
           <div className="text-xs text-slate-500">
             Break-even price/unit
           </div>
@@ -55,9 +56,9 @@ export default function BreakEvenSection({
           </div>
         </div>
 
-        <div className="rounded-xl bg-slate-50 p-3">
+        <div className="rounded-xl bg-slate-50 p-4">
           <div className="text-xs text-slate-500">
-            Required sell price/unit
+            Needed sell price
           </div>
 
           <div className="text-lg font-bold text-slate-900">
@@ -65,21 +66,23 @@ export default function BreakEvenSection({
           </div>
         </div>
 
-        <div className="rounded-xl bg-slate-50 p-3">
+        <div className="rounded-xl bg-slate-50 p-4">
           <div className="text-xs text-slate-500">
             Safety margin/unit
           </div>
 
           <div
             className={`text-lg font-bold ${
-              currentSafetyMargin >= 0 ? "text-green-700" : "text-red-700"
+              currentSafetyMargin >= 0
+                ? "text-green-700"
+                : "text-red-700"
             }`}
           >
             {formatMoney(currentSafetyMargin)}
           </div>
         </div>
 
-        <div className="rounded-xl bg-slate-50 p-3">
+        <div className="rounded-xl bg-slate-50 p-4">
           <div className="text-xs text-slate-500 mb-2">
             Target margin %
           </div>
@@ -87,7 +90,9 @@ export default function BreakEvenSection({
           <input
             type="number"
             value={liveTargetMargin}
-            onChange={(e) => setLiveTargetMargin(Number(e.target.value) || 0)}
+            onChange={(e) =>
+              setLiveTargetMargin(Number(e.target.value) || 0)
+            }
             className={inputClass}
           />
         </div>

@@ -311,6 +311,8 @@ export default function FishProductCalculatorBasic() {
 
   const calcUnits = (kg: number, perUnit: number) => Math.floor(kg / perUnit);
   const formatMoney = (v: number) => `€${Number(v || 0).toFixed(2)}`;
+  
+  
 
   const getProductIngredientTotal = (productKey: string) =>
     (productIngredients[productKey] || []).reduce((sum, item) => sum + item.quantity * item.price, 0);
@@ -916,7 +918,7 @@ export default function FishProductCalculatorBasic() {
                     </select>
                   </div>
                   <div>
-                    <div className="mb-1 text-sm">Product Key</div>
+                    <div className="mb-1 text-sm">Product ID</div>
                     <input value={newProduct.key} onChange={(e) => setNewProduct({ ...newProduct, key: e.target.value })} className={inputClass} />
                   </div>
                   <div>
@@ -1075,19 +1077,38 @@ export default function FishProductCalculatorBasic() {
             )}
           </div>
 
-          <div className={cardClass}>
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold">Save & Compare</h2>
-              <div className="flex flex-wrap gap-2">
-                <button onClick={saveScenario} className="rounded bg-blue-600 px-3 py-2 text-sm text-white">Save Scenario</button>
-                <button onClick={() => setShowReportView((s) => !s)} className="rounded bg-slate-700 px-3 py-2 text-sm text-white">{showReportView ? "Hide Report" : "View Report"}</button>
-                <button onClick={exportToCsv} className="rounded bg-emerald-600 px-3 py-2 text-sm text-white">Export</button>
-              </div>
-            </div>
+         <div className={cardClass}>
+  <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+    <h2 className="text-lg font-semibold">Save & Compare</h2>
+
+    <div className="flex flex-wrap gap-2">
+      <button
+        onClick={saveScenario}
+        className="rounded bg-blue-600 px-3 py-2 text-sm text-white whitespace-nowrap"
+      >
+        Save Scenario
+      </button>
+
+      <button
+        onClick={() => setShowReportView((s) => !s)}
+        className="rounded bg-blue-600 px-3 py-2 text-sm text-white whitespace-nowrap"
+      >
+        {showReportView ? "Hide Report" : "View Report"}
+      </button>
+
+      <button
+        onClick={exportToCsv}
+        className="rounded bg-blue-600 px-3 py-2 text-sm text-white whitespace-nowrap"
+      >
+        Export
+      </button>
+    </div>
+  </div>
 
             {showReportView && (
               <div className="mt-4 overflow-x-auto">
-                <table className="w-full text-sm">
+                
+				 <table className="min-w-[900px] text-sm">
                   <thead>
                     <tr className="border-b text-left">
                       <th className="py-2">Species</th>
