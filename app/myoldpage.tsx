@@ -3,11 +3,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
-import BreakEvenSection from "@/components/BreakEvenSection";
-import LabourSection from "@/components/LabourSection";
-import IngredientsSection from "@/components/IngredientsSection";
-import ExtraLabourSection from "@/components/ExtraLabourSection";
-import OtherCostsSection from "@/components/OtherCostsSection";
 
 type Product = {
   key: string;
@@ -619,43 +614,48 @@ export default function FishProductCalculatorBasic() {
         </div>
       </div>
 
- {/* HERO SECTION */}
-<div className="bg-slate-900 text-white py-12 px-6">
-  <div className="max-w-6xl mx-auto">
-    <h1 className="text-3xl md:text-4xl font-bold mb-4">
-      Fish Processing Calculator
-    </h1>
+      {/* HERO SECTION */}
+      <div className="bg-slate-900 text-white py-12 px-6">
+        <div className="max-w-6xl mx-auto">
+          <h1 className="text-3xl md:text-4xl font-bold mb-4">
+            Fish Processing Calculator
+          </h1>
+          <p className="text-slate-300 max-w-2xl mb-6">
+            Calculate fish yields, production output, labour costs, and profit per unit for your seafood products. Built for processors, factories, and production planning.
+          </p>
 
-   
+          <div className="grid md:grid-cols-3 gap-4 text-sm">
+            <div className="bg-slate-800 p-4 rounded-xl">
+              ✔ Calculate fillet & trim yields
+            </div>
+            <div className="bg-slate-800 p-4 rounded-xl">
+              ✔ Track labour & machine costs
+            </div>
+            <div className="bg-slate-800 p-4 rounded-xl">
+              ✔ See profit per product instantly
+            </div>
+          </div>
 
-    <div className="grid md:grid-cols-3 gap-4 text-sm">
-      <div className="bg-slate-800 p-4 rounded-xl">
-        ✔ Calculate fillet & trim yields
-      </div>
-      <div className="bg-slate-800 p-4 rounded-xl">
-        ✔ Track labour & machine costs
-      </div>
-      <div className="bg-slate-800 p-4 rounded-xl">
-        ✔ Estimate break-even pricing
-      </div>
-    </div>
-
-    <div className="mt-6 mx-auto rounded-xl border border-slate-700 bg-slate-800 p-5 text-sm leading-7 text-slate-200 max-w-3xl">
-      <p>
-        Built for seafood processors, factories, fishermen, trawler owners, and production planning.
-        <br />
-        <br />
-        This calculator helps estimate fish yields, labour costs, production costs, and break-even pricing before processing begins.
-        <br />
-        <br />
-        Use the Tutorial section above to learn how the calculator works step-by-step.
-        <br />
-        <br />
-        For enquiries or industry feedback, please contact Dan at info@moonblogger.com.
-      </p>
-    </div>
-  </div>
+          <div className="mt-6 rounded-xl border border-slate-700 bg-slate-800 p-5 text-sm leading-7 text-slate-200 max-w-3xl">
+            <p>
+              <div className="mt-6 rounded-xl border border-slate-700 bg-slate-800 p-5 text-sm leading-7 text-slate-200 max-w-3xl">
+  
+   <p>
+  Built for seafood processors, factories, fishermen, trawler owners, and production planning.
+  <br /><br />
+  This calculator helps estimate fish yields, labour costs, production costs, and break-even pricing before processing begins.
+  <br /><br />
+  Use the Tutorial section above to learn how the calculator works step-by-step.
+  <br /><br />
+  For enquiries or industry feedback, please contact Dan at info@moonblogger.com.
+</p>
+  
 </div>
+            </p>
+          </div>
+        </div>
+      </div>
+
       <div className="p-6">
         <div className="mx-auto max-w-6xl space-y-6">
           <div className={cardClass}>
@@ -905,79 +905,164 @@ export default function FishProductCalculatorBasic() {
                   Units: <strong>{currentUnits}</strong> | Fish cost/unit: <strong>{formatMoney(getProductFishCostPerUnit(selectedProductData))}</strong> | Labour/unit: <strong>{formatMoney(getProductLabourCostPerUnit(selectedProductData))}</strong> | Ingredients/unit: <strong>{formatMoney(getProductIngredientTotal(selectedProductData.key))}</strong> | Other costs/unit: <strong>{formatMoney(getProductOtherCostTotal(selectedProductData.key))}</strong> | Profit/unit: <strong className={currentProfitPerUnit >= 0 ? "text-green-700" : "text-red-700"}>{formatMoney(currentProfitPerUnit)}</strong>
                 </div>
 
-                <BreakEvenSection
-  currentBreakEvenPrice={currentBreakEvenPrice}
-  currentSafetyMargin={currentSafetyMargin}
-  currentBreakEvenStatus={currentBreakEvenStatus}
-  liveTargetMargin={liveTargetMargin}
-  setLiveTargetMargin={setLiveTargetMargin}
-  getRequiredSellPrice={() => getRequiredSellPrice(selectedProductData)}
-  formatMoney={formatMoney}
-  inputClass={inputClass}
-/>
+                <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+                  <div className="mb-3 flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+                    <div>
+                      <h3 className="text-base font-semibold">Break-Even Analysis</h3>
+                      <p className="text-sm text-slate-600">
+                        This shows the minimum selling price needed before this product starts making money.
+                      </p>
+                    </div>
+                    {currentBreakEvenStatus && (
+                      <span className={`inline-flex rounded-full border px-3 py-1 text-sm font-semibold ${currentBreakEvenStatus.className}`}>
+                        {currentBreakEvenStatus.label}
+                      </span>
+                    )}
+                  </div>
 
-                <LabourSection
-  hourlyRate={hourlyRate}
-  setHourlyRate={setHourlyRate}
-  operatorAmount={operatorAmount}
-  setOperatorAmount={setOperatorAmount}
-  currentLabourTotal={currentLabourTotal}
-  getProductLabourCostPerUnit={() =>
-    getProductLabourCostPerUnit(selectedProductData)
-  }
-  machineStaffing={machineStaffing}
-  setMachineStaffing={setMachineStaffing}
-  machineHours={machineHours}
-  setMachineHours={setMachineHours}
-  selectedMachines={selectedProductData.machines}
-  formatMoney={formatMoney}
-  inputClass={inputClass}
-/>
+                  <div className="grid gap-3 md:grid-cols-4">
+                    <div className="rounded-xl bg-slate-50 p-3">
+                      <div className="text-xs text-slate-500">Break-even price/unit</div>
+                      <div className="text-lg font-bold text-slate-900">{formatMoney(currentBreakEvenPrice)}</div>
+                    </div>
+                    <div className="rounded-xl bg-slate-50 p-3">
+                      <div className="text-xs text-slate-500">Required sell price/unit</div>
+                      <div className="text-lg font-bold text-slate-900">{formatMoney(getRequiredSellPrice(selectedProductData))}</div>
+                    </div>
+                    <div className="rounded-xl bg-slate-50 p-3">
+                      <div className="text-xs text-slate-500">Safety margin/unit</div>
+                      <div className={`text-lg font-bold ${currentSafetyMargin >= 0 ? "text-green-700" : "text-red-700"}`}>
+                        {formatMoney(currentSafetyMargin)}
+                      </div>
+                    </div>
+                    <div className="rounded-xl bg-slate-50 p-3">
+                      <div className="text-xs text-slate-500 mb-2">Target margin %</div>
+                      <input
+                        type="number"
+                        value={liveTargetMargin}
+                        onChange={(e) => setLiveTargetMargin(Number(e.target.value) || 0)}
+                        className={inputClass}
+                      />
+                    </div>
+                  </div>
 
-                <ExtraLabourSection
-  selectedProductKey={selectedProductData.key}
-  selectedExtraLabour={
-    productExtraLabour[selectedProductData.key] || []
-  }
-  newExtraLabourByProduct={newExtraLabourByProduct}
-  setNewExtraLabourByProduct={setNewExtraLabourByProduct}
-  updateExtraLabour={updateExtraLabour}
-  addExtraLabourToProduct={addExtraLabourToProduct}
-  removeExtraLabourFromProduct={removeExtraLabourFromProduct}
-  getExtraLabourTotal={getProductExtraLabourTotal}
-  formatMoney={formatMoney}
-  inputClass={inputClass}
-/>
+                  <div className="mt-3 text-sm text-slate-600">
+                    If your selling price falls below <strong>{formatMoney(currentBreakEvenPrice)}</strong> per unit, this product is likely to lose money based on the current fish, labour, ingredient, and other cost figures.
+                  </div>
+                </div>
 
-                <IngredientsSection
-  selectedProductKey={selectedProductData.key}
-  selectedProductIngredients={
-    productIngredients[selectedProductData.key] || []
-  }
-  newIngredientByProduct={newIngredientByProduct}
-  setNewIngredientByProduct={setNewIngredientByProduct}
-  updateIngredient={updateIngredient}
-  addIngredientToProduct={addIngredientToProduct}
-  removeIngredientFromProduct={removeIngredientFromProduct}
-  getProductIngredientTotal={getProductIngredientTotal}
-  formatMoney={formatMoney}
-  inputClass={inputClass}
-/>
+                <div>
+                  <div className="mb-2 text-sm font-semibold">Labour Breakdown</div>
+                  <div className="mb-3 grid grid-cols-4 gap-2 items-end">
+                    <div>
+                      <div className="mb-1 text-xs text-slate-500">Hourly Rate (€)</div>
+                      <input type="number" value={hourlyRate} onChange={(e) => setHourlyRate(Number(e.target.value) || 0)} className={inputClass} />
+                    </div>
+                    <div>
+                      <div className="mb-1 text-xs text-slate-500">Operators</div>
+                      <input type="number" value={operatorAmount} onChange={(e) => setOperatorAmount(Math.max(1, Number(e.target.value) || 1))} className={inputClass} />
+                    </div>
+                    <div className="text-sm text-slate-600">Labour total: <strong>{formatMoney(currentLabourTotal)}</strong></div>
+                    <div className="text-sm text-slate-600">Labour/unit: <strong>{formatMoney(getProductLabourCostPerUnit(selectedProductData))}</strong></div>
+                  </div>
 
-                <OtherCostsSection
-  selectedProductKey={selectedProductData.key}
-  selectedOtherCosts={
-    productOtherCosts[selectedProductData.key] || []
-  }
-  newOtherCostByProduct={newOtherCostByProduct}
-  setNewOtherCostByProduct={setNewOtherCostByProduct}
-  updateOtherCost={updateOtherCost}
-  addOtherCostToProduct={addOtherCostToProduct}
-  removeOtherCostFromProduct={removeOtherCostFromProduct}
-  getProductOtherCostTotal={getProductOtherCostTotal}
-  formatMoney={formatMoney}
-  inputClass={inputClass}
-/>
+                  <div className="space-y-2">
+                    <div className="grid grid-cols-3 gap-2 mb-2 text-xs font-semibold text-slate-500">
+                      <div>Machine</div>
+                      <div>Staff Required</div>
+                      <div>Hours Used</div>
+                    </div>
+
+                    {selectedProductData.machines.map((machine) => (
+                      <div key={machine} className="grid grid-cols-3 gap-2 items-center">
+                        <div className="capitalize text-sm text-slate-700">{machine}</div>
+                        <input type="number" value={machineStaffing[machine] || 0} onChange={(e) => setMachineStaffing((prev) => ({ ...prev, [machine]: Number(e.target.value) || 0 }))} className={inputClass} placeholder="Staff" />
+                        <input type="number" value={machineHours[machine] || 0} onChange={(e) => setMachineHours((prev) => ({ ...prev, [machine]: Number(e.target.value) || 0 }))} className={inputClass} placeholder="Hours" />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <div className="mb-2 text-sm font-semibold">Extra Labour</div>
+                  {(productExtraLabour[selectedProductData.key] || []).map((item, i) => (
+                    <div key={i} className="mt-1 grid grid-cols-5 gap-2 items-center">
+                      <input value={item.name} onChange={(e) => updateExtraLabour(selectedProductData.key, i, "name", e.target.value)} className={inputClass} placeholder="Task" />
+                      <input type="number" value={item.staff || ""} onChange={(e) => updateExtraLabour(selectedProductData.key, i, "staff", e.target.value)} className={inputClass} placeholder="Staff" />
+                      <input type="number" value={item.hours || ""} onChange={(e) => updateExtraLabour(selectedProductData.key, i, "hours", e.target.value)} className={inputClass} placeholder="Hours" />
+                      <input type="number" value={item.rate || ""} onChange={(e) => updateExtraLabour(selectedProductData.key, i, "rate", e.target.value)} className={inputClass} placeholder="Rate (€)" />
+                      <button onClick={() => removeExtraLabourFromProduct(selectedProductData.key, i)} className="rounded bg-red-100 px-3 py-2 text-sm text-red-700">Remove</button>
+                    </div>
+                  ))}
+                  <div className="mt-3 grid grid-cols-5 gap-2 items-center">
+                    <input value={newExtraLabourByProduct[selectedProductData.key]?.name || ""} onChange={(e) => setNewExtraLabourByProduct((prev) => ({ ...prev, [selectedProductData.key]: { ...(prev[selectedProductData.key] || { staff: 0, hours: 0, rate: hourlyRate }), name: e.target.value } }))} className={inputClass} placeholder="Extra labour task" />
+                    <input type="number" value={newExtraLabourByProduct[selectedProductData.key]?.staff || ""} onChange={(e) => setNewExtraLabourByProduct((prev) => ({ ...prev, [selectedProductData.key]: { ...(prev[selectedProductData.key] || { name: "", hours: 0, rate: hourlyRate }), staff: Number(e.target.value) || 0 } }))} className={inputClass} placeholder="Staff" />
+                    <input type="number" value={newExtraLabourByProduct[selectedProductData.key]?.hours || ""} onChange={(e) => setNewExtraLabourByProduct((prev) => ({ ...prev, [selectedProductData.key]: { ...(prev[selectedProductData.key] || { name: "", staff: 0, rate: hourlyRate }), hours: Number(e.target.value) || 0 } }))} className={inputClass} placeholder="Hours" />
+                    <input type="number" value={newExtraLabourByProduct[selectedProductData.key]?.rate || ""} onChange={(e) => setNewExtraLabourByProduct((prev) => ({ ...prev, [selectedProductData.key]: { ...(prev[selectedProductData.key] || { name: "", staff: 0, hours: 0 }), rate: Number(e.target.value) || 0 } }))} className={inputClass} placeholder="Rate (€)" />
+                    <button onClick={() => addExtraLabourToProduct(selectedProductData.key)} className="rounded bg-slate-700 px-3 py-2 text-sm text-white">+ Add Labour</button>
+                  </div>
+                </div>
+
+                <div>
+                  <div className="mb-2 text-sm font-semibold">Ingredients Breakdown</div>
+
+                  <div className="grid grid-cols-4 gap-2 mb-2 text-xs font-semibold text-slate-500">
+                    <div>Ingredient</div>
+                    <div>Qty per Unit</div>
+                    <div>Cost (€)</div>
+                    <div></div>
+                  </div>
+                  {selectedProductIngredients.length === 0 ? (
+                    <p className="text-sm text-slate-500">No ingredients added yet</p>
+                  ) : (
+                    <>
+                      {selectedProductIngredients.map((item, i) => (
+                        <div key={i} className="mt-1 grid grid-cols-4 gap-2 items-center">
+                          <input
+                            value={item.name}
+                            onChange={(e) => updateIngredient(selectedProductData.key, i, "name", e.target.value)}
+                            className={inputClass}
+                            placeholder="Ingredient"
+                          />
+                          <input type="number" value={item.quantity || ""} onChange={(e) => updateIngredient(selectedProductData.key, i, "quantity", e.target.value)} className={inputClass} placeholder="Qty per Unit" />
+                          <input type="number" value={item.price || ""} onChange={(e) => updateIngredient(selectedProductData.key, i, "price", e.target.value)} className={inputClass} placeholder="Cost (€)" />
+                          <button onClick={() => removeIngredientFromProduct(selectedProductData.key, i)} className="rounded bg-red-100 px-3 py-2 text-sm text-red-700">Remove</button>
+                        </div>
+                      ))}
+                      <div className="mt-2 text-sm text-slate-700">
+                        Ingredients total per unit: <strong>{formatMoney(getProductIngredientTotal(selectedProductData.key))}</strong>
+                      </div>
+                    </>
+                  )}
+
+                  <div className="mt-3 grid grid-cols-4 gap-2 items-center">
+                    <input value={newIngredientByProduct[selectedProductData.key]?.name || ""} onChange={(e) => setNewIngredientByProduct((prev) => ({ ...prev, [selectedProductData.key]: { ...(prev[selectedProductData.key] || { quantity: 0, price: 0 }), name: e.target.value } }))} className={inputClass} placeholder="Ingredient name" />
+                    <input type="number" value={newIngredientByProduct[selectedProductData.key]?.quantity || ""} onChange={(e) => setNewIngredientByProduct((prev) => ({ ...prev, [selectedProductData.key]: { ...(prev[selectedProductData.key] || { name: "", price: 0 }), quantity: Number(e.target.value) || 0 } }))} className={inputClass} placeholder="Qty per Unit" />
+                    <input type="number" value={newIngredientByProduct[selectedProductData.key]?.price || ""} onChange={(e) => setNewIngredientByProduct((prev) => ({ ...prev, [selectedProductData.key]: { ...(prev[selectedProductData.key] || { name: "", quantity: 0 }), price: Number(e.target.value) || 0 } }))} className={inputClass} placeholder="Cost (€)" />
+                    <button onClick={() => addIngredientToProduct(selectedProductData.key)} className="rounded bg-green-600 px-3 py-2 text-sm text-white">+ Add Ingredient</button>
+                  </div>
+                </div>
+
+                <div>
+                  <div className="mb-2 text-sm font-semibold">Other Costs</div>
+                  {(productOtherCosts[selectedProductData.key] || []).map((item, i) => (
+                    <div key={i} className="mt-1 grid grid-cols-3 gap-2 items-center">
+                      <input
+                        value={item.name}
+                        onChange={(e) => updateOtherCost(selectedProductData.key, i, "name", e.target.value)}
+                        className={inputClass}
+                        placeholder="Other cost"
+                      />
+                      <input type="number" value={item.amount || ""} onChange={(e) => updateOtherCost(selectedProductData.key, i, "amount", e.target.value)} className={inputClass} placeholder="Amount (€)" />
+                      <button onClick={() => removeOtherCostFromProduct(selectedProductData.key, i)} className="rounded bg-red-100 px-3 py-2 text-sm text-red-700">Remove</button>
+                    </div>
+                  ))}
+                  <div className="mt-3 grid grid-cols-3 gap-2 items-center">
+                    <input value={newOtherCostByProduct[selectedProductData.key]?.name || ""} onChange={(e) => setNewOtherCostByProduct((prev) => ({ ...prev, [selectedProductData.key]: { ...(prev[selectedProductData.key] || { amount: 0 }), name: e.target.value } }))} className={inputClass} placeholder="Other cost name" />
+                    <input type="number" value={newOtherCostByProduct[selectedProductData.key]?.amount || ""} onChange={(e) => setNewOtherCostByProduct((prev) => ({ ...prev, [selectedProductData.key]: { ...(prev[selectedProductData.key] || { name: "" }), amount: Number(e.target.value) || 0 } }))} className={inputClass} placeholder="Amount (€)" />
+                    <button onClick={() => addOtherCostToProduct(selectedProductData.key)} className="rounded bg-slate-700 px-3 py-2 text-sm text-white">+ Add Other Cost</button>
+                  </div>
+                </div>
               </div>
             )}
           </div>
