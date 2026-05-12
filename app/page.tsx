@@ -1106,9 +1106,9 @@ export default function FishProductCalculatorBasic() {
   </div>
 
             {showReportView && (
-              <div className="mt-4 overflow-x-auto">
+               <div className="mt-4 overflow-x-auto mx-auto">
                 
-				 <table className="min-w-[900px] text-sm">
+				<table className="min-w-[900px] text-sm mx-auto">
                   <thead>
                     <tr className="border-b text-left">
                       <th className="py-2">Species</th>
