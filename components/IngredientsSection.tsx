@@ -1,3 +1,5 @@
+import type { Dispatch, SetStateAction } from "react";
+
 type Ingredient = {
   name: string;
   quantity: number;
@@ -8,8 +10,8 @@ type Props = {
   selectedProductKey: string;
   selectedProductIngredients: Ingredient[];
   newIngredientByProduct: Record<string, Ingredient>;
-  setNewIngredientByProduct: React.Dispatch<
-    React.SetStateAction<Record<string, Ingredient>>
+  setNewIngredientByProduct: Dispatch<
+    SetStateAction<Record<string, Ingredient>>
   >;
   updateIngredient: (
     productKey: string,
@@ -18,10 +20,7 @@ type Props = {
     value: string
   ) => void;
   addIngredientToProduct: (productKey: string) => void;
-  removeIngredientFromProduct: (
-    productKey: string,
-    index: number
-  ) => void;
+  removeIngredientFromProduct: (productKey: string, index: number) => void;
   getProductIngredientTotal: (productKey: string) => number;
   formatMoney: (value: number) => string;
   inputClass: string;
@@ -41,9 +40,7 @@ export default function IngredientsSection({
 }: Props) {
   return (
     <div>
-      <div className="mb-2 text-sm font-semibold">
-        Ingredients Breakdown
-      </div>
+      <div className="mb-2 text-sm font-semibold">Ingredients Breakdown</div>
 
       <div className="grid grid-cols-4 gap-2 mb-2 text-xs font-semibold text-slate-500">
         <div>Ingredient</div>
@@ -53,9 +50,7 @@ export default function IngredientsSection({
       </div>
 
       {selectedProductIngredients.length === 0 ? (
-        <p className="text-sm text-slate-500">
-          No ingredients added yet
-        </p>
+        <p className="text-sm text-slate-500">No ingredients added yet</p>
       ) : (
         <>
           {selectedProductIngredients.map((item, i) => (
@@ -109,10 +104,7 @@ export default function IngredientsSection({
 
               <button
                 onClick={() =>
-                  removeIngredientFromProduct(
-                    selectedProductKey,
-                    i
-                  )
+                  removeIngredientFromProduct(selectedProductKey, i)
                 }
                 className="rounded bg-red-100 px-3 py-2 text-sm text-red-700"
               >
@@ -124,9 +116,7 @@ export default function IngredientsSection({
           <div className="mt-2 text-sm text-slate-700">
             Ingredients total per unit:{" "}
             <strong>
-              {formatMoney(
-                getProductIngredientTotal(selectedProductKey)
-              )}
+              {formatMoney(getProductIngredientTotal(selectedProductKey))}
             </strong>
           </div>
         </>
@@ -134,10 +124,7 @@ export default function IngredientsSection({
 
       <div className="mt-3 grid grid-cols-4 gap-2 items-center">
         <input
-          value={
-            newIngredientByProduct[selectedProductKey]?.name ||
-            ""
-          }
+          value={newIngredientByProduct[selectedProductKey]?.name || ""}
           onChange={(e) =>
             setNewIngredientByProduct((prev) => ({
               ...prev,
@@ -156,10 +143,7 @@ export default function IngredientsSection({
 
         <input
           type="number"
-          value={
-            newIngredientByProduct[selectedProductKey]
-              ?.quantity || ""
-          }
+          value={newIngredientByProduct[selectedProductKey]?.quantity || ""}
           onChange={(e) =>
             setNewIngredientByProduct((prev) => ({
               ...prev,
@@ -178,10 +162,7 @@ export default function IngredientsSection({
 
         <input
           type="number"
-          value={
-            newIngredientByProduct[selectedProductKey]?.price ||
-            ""
-          }
+          value={newIngredientByProduct[selectedProductKey]?.price || ""}
           onChange={(e) =>
             setNewIngredientByProduct((prev) => ({
               ...prev,
@@ -199,9 +180,7 @@ export default function IngredientsSection({
         />
 
         <button
-          onClick={() =>
-            addIngredientToProduct(selectedProductKey)
-          }
+          onClick={() => addIngredientToProduct(selectedProductKey)}
           className="rounded bg-green-600 px-3 py-2 text-sm text-white"
         >
           + Add Ingredient

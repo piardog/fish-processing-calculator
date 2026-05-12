@@ -1,5 +1,7 @@
+import type { Dispatch, SetStateAction } from "react";
+
 type ExtraLabour = {
-  task: string;
+  name: string;
   staff: number;
   hours: number;
   rate: number;
@@ -9,8 +11,8 @@ type Props = {
   selectedProductKey: string;
   selectedExtraLabour: ExtraLabour[];
   newExtraLabourByProduct: Record<string, ExtraLabour>;
-  setNewExtraLabourByProduct: React.Dispatch<
-    React.SetStateAction<Record<string, ExtraLabour>>
+  setNewExtraLabourByProduct: Dispatch<
+    SetStateAction<Record<string, ExtraLabour>>
   >;
   updateExtraLabour: (
     productKey: string,
@@ -19,10 +21,7 @@ type Props = {
     value: string
   ) => void;
   addExtraLabourToProduct: (productKey: string) => void;
-  removeExtraLabourFromProduct: (
-    productKey: string,
-    index: number
-  ) => void;
+  removeExtraLabourFromProduct: (productKey: string, index: number) => void;
   getExtraLabourTotal: (productKey: string) => number;
   formatMoney: (value: number) => string;
   inputClass: string;
@@ -42,9 +41,7 @@ export default function ExtraLabourSection({
 }: Props) {
   return (
     <div>
-      <div className="mb-2 text-sm font-semibold">
-        Extra Labour
-      </div>
+      <div className="mb-2 text-sm font-semibold">Extra Labour</div>
 
       <div className="grid grid-cols-5 gap-2 mb-2 text-xs font-semibold text-slate-500">
         <div>Task</div>
@@ -55,9 +52,7 @@ export default function ExtraLabourSection({
       </div>
 
       {selectedExtraLabour.length === 0 ? (
-        <p className="text-sm text-slate-500">
-          No extra labour added yet
-        </p>
+        <p className="text-sm text-slate-500">No extra labour added yet</p>
       ) : (
         <>
           {selectedExtraLabour.map((item, i) => (
@@ -66,12 +61,12 @@ export default function ExtraLabourSection({
               className="mt-1 grid grid-cols-5 gap-2 items-center"
             >
               <input
-                value={item.task}
+                value={item.name}
                 onChange={(e) =>
                   updateExtraLabour(
                     selectedProductKey,
                     i,
-                    "task",
+                    "name",
                     e.target.value
                   )
                 }
@@ -126,10 +121,7 @@ export default function ExtraLabourSection({
 
               <button
                 onClick={() =>
-                  removeExtraLabourFromProduct(
-                    selectedProductKey,
-                    i
-                  )
+                  removeExtraLabourFromProduct(selectedProductKey, i)
                 }
                 className="rounded bg-red-100 px-3 py-2 text-sm text-red-700"
               >
@@ -140,21 +132,14 @@ export default function ExtraLabourSection({
 
           <div className="mt-2 text-sm text-slate-700">
             Extra labour total:{" "}
-            <strong>
-              {formatMoney(
-                getExtraLabourTotal(selectedProductKey)
-              )}
-            </strong>
+            <strong>{formatMoney(getExtraLabourTotal(selectedProductKey))}</strong>
           </div>
         </>
       )}
 
       <div className="mt-3 grid grid-cols-5 gap-2 items-center">
         <input
-          value={
-            newExtraLabourByProduct[selectedProductKey]
-              ?.task || ""
-          }
+          value={newExtraLabourByProduct[selectedProductKey]?.name || ""}
           onChange={(e) =>
             setNewExtraLabourByProduct((prev) => ({
               ...prev,
@@ -164,7 +149,7 @@ export default function ExtraLabourSection({
                   hours: 0,
                   rate: 0,
                 }),
-                task: e.target.value,
+                name: e.target.value,
               },
             }))
           }
@@ -174,16 +159,13 @@ export default function ExtraLabourSection({
 
         <input
           type="number"
-          value={
-            newExtraLabourByProduct[selectedProductKey]
-              ?.staff || ""
-          }
+          value={newExtraLabourByProduct[selectedProductKey]?.staff || ""}
           onChange={(e) =>
             setNewExtraLabourByProduct((prev) => ({
               ...prev,
               [selectedProductKey]: {
                 ...(prev[selectedProductKey] || {
-                  task: "",
+                  name: "",
                   hours: 0,
                   rate: 0,
                 }),
@@ -197,16 +179,13 @@ export default function ExtraLabourSection({
 
         <input
           type="number"
-          value={
-            newExtraLabourByProduct[selectedProductKey]
-              ?.hours || ""
-          }
+          value={newExtraLabourByProduct[selectedProductKey]?.hours || ""}
           onChange={(e) =>
             setNewExtraLabourByProduct((prev) => ({
               ...prev,
               [selectedProductKey]: {
                 ...(prev[selectedProductKey] || {
-                  task: "",
+                  name: "",
                   staff: 0,
                   rate: 0,
                 }),
@@ -220,16 +199,13 @@ export default function ExtraLabourSection({
 
         <input
           type="number"
-          value={
-            newExtraLabourByProduct[selectedProductKey]
-              ?.rate || ""
-          }
+          value={newExtraLabourByProduct[selectedProductKey]?.rate || ""}
           onChange={(e) =>
             setNewExtraLabourByProduct((prev) => ({
               ...prev,
               [selectedProductKey]: {
                 ...(prev[selectedProductKey] || {
-                  task: "",
+                  name: "",
                   staff: 0,
                   hours: 0,
                 }),
@@ -242,9 +218,7 @@ export default function ExtraLabourSection({
         />
 
         <button
-          onClick={() =>
-            addExtraLabourToProduct(selectedProductKey)
-          }
+          onClick={() => addExtraLabourToProduct(selectedProductKey)}
           className="rounded bg-green-600 px-3 py-2 text-sm text-white"
         >
           + Add Labour

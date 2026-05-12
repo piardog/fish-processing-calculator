@@ -31,8 +31,7 @@ export default function BreakEvenSection({
           </h3>
 
           <p className="text-sm text-slate-600">
-            This shows the minimum selling price needed before
-            this product starts making money.
+            This shows the minimum selling price needed before this product starts making money.
           </p>
         </div>
 
@@ -73,9 +72,7 @@ export default function BreakEvenSection({
 
           <div
             className={`text-lg font-bold ${
-              currentSafetyMargin >= 0
-                ? "text-green-700"
-                : "text-red-700"
+              currentSafetyMargin >= 0 ? "text-green-700" : "text-red-700"
             }`}
           >
             {formatMoney(currentSafetyMargin)}
@@ -90,11 +87,7 @@ export default function BreakEvenSection({
           <input
             type="number"
             value={liveTargetMargin}
-            onChange={(e) =>
-              setLiveTargetMargin(
-                Number(e.target.value) || 0
-              )
-            }
+            onChange={(e) => setLiveTargetMargin(Number(e.target.value) || 0)}
             className={inputClass}
           />
         </div>
@@ -102,12 +95,9 @@ export default function BreakEvenSection({
 
       <div className="mt-3 text-sm text-slate-600">
         If your selling price falls below{" "}
-        <strong>
-          {formatMoney(currentBreakEvenPrice)}
-        </strong>{" "}
-        per unit, this product is likely to lose money
-        based on the current fish, labour, ingredient,
-        and other cost figures.
+        <strong>{formatMoney(currentBreakEvenPrice)}</strong>{" "}
+        per unit, this product is likely to lose money based on the current fish,
+        labour, ingredient, and other cost figures.
       </div>
     </div>
   );

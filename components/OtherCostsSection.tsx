@@ -1,3 +1,5 @@
+import type { Dispatch, SetStateAction } from "react";
+
 type OtherCost = {
   name: string;
   amount: number;
@@ -7,8 +9,8 @@ type Props = {
   selectedProductKey: string;
   selectedOtherCosts: OtherCost[];
   newOtherCostByProduct: Record<string, OtherCost>;
-  setNewOtherCostByProduct: React.Dispatch<
-    React.SetStateAction<Record<string, OtherCost>>
+  setNewOtherCostByProduct: Dispatch<
+    SetStateAction<Record<string, OtherCost>>
   >;
   updateOtherCost: (
     productKey: string,
@@ -17,10 +19,7 @@ type Props = {
     value: string
   ) => void;
   addOtherCostToProduct: (productKey: string) => void;
-  removeOtherCostFromProduct: (
-    productKey: string,
-    index: number
-  ) => void;
+  removeOtherCostFromProduct: (productKey: string, index: number) => void;
   getProductOtherCostTotal: (productKey: string) => number;
   formatMoney: (value: number) => string;
   inputClass: string;
@@ -40,9 +39,7 @@ export default function OtherCostsSection({
 }: Props) {
   return (
     <div>
-      <div className="mb-2 text-sm font-semibold">
-        Other Costs
-      </div>
+      <div className="mb-2 text-sm font-semibold">Other Costs</div>
 
       <div className="grid grid-cols-3 gap-2 mb-2 text-xs font-semibold text-slate-500">
         <div>Cost Name</div>
@@ -51,9 +48,7 @@ export default function OtherCostsSection({
       </div>
 
       {selectedOtherCosts.length === 0 ? (
-        <p className="text-sm text-slate-500">
-          No other costs added yet
-        </p>
+        <p className="text-sm text-slate-500">No other costs added yet</p>
       ) : (
         <>
           {selectedOtherCosts.map((item, i) => (
@@ -92,10 +87,7 @@ export default function OtherCostsSection({
 
               <button
                 onClick={() =>
-                  removeOtherCostFromProduct(
-                    selectedProductKey,
-                    i
-                  )
+                  removeOtherCostFromProduct(selectedProductKey, i)
                 }
                 className="rounded bg-red-100 px-3 py-2 text-sm text-red-700"
               >
@@ -107,9 +99,7 @@ export default function OtherCostsSection({
           <div className="mt-2 text-sm text-slate-700">
             Other costs total per unit:{" "}
             <strong>
-              {formatMoney(
-                getProductOtherCostTotal(selectedProductKey)
-              )}
+              {formatMoney(getProductOtherCostTotal(selectedProductKey))}
             </strong>
           </div>
         </>
@@ -117,10 +107,7 @@ export default function OtherCostsSection({
 
       <div className="mt-3 grid grid-cols-3 gap-2 items-center">
         <input
-          value={
-            newOtherCostByProduct[selectedProductKey]?.name ||
-            ""
-          }
+          value={newOtherCostByProduct[selectedProductKey]?.name || ""}
           onChange={(e) =>
             setNewOtherCostByProduct((prev) => ({
               ...prev,
@@ -138,10 +125,7 @@ export default function OtherCostsSection({
 
         <input
           type="number"
-          value={
-            newOtherCostByProduct[selectedProductKey]?.amount ||
-            ""
-          }
+          value={newOtherCostByProduct[selectedProductKey]?.amount || ""}
           onChange={(e) =>
             setNewOtherCostByProduct((prev) => ({
               ...prev,
@@ -158,9 +142,7 @@ export default function OtherCostsSection({
         />
 
         <button
-          onClick={() =>
-            addOtherCostToProduct(selectedProductKey)
-          }
+          onClick={() => addOtherCostToProduct(selectedProductKey)}
           className="rounded bg-slate-700 px-3 py-2 text-sm text-white"
         >
           + Add Other Cost

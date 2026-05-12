@@ -1,3 +1,5 @@
+import type { Dispatch, SetStateAction } from "react";
+
 type Props = {
   hourlyRate: number;
   setHourlyRate: (value: number) => void;
@@ -6,13 +8,9 @@ type Props = {
   currentLabourTotal: number;
   getProductLabourCostPerUnit: () => number;
   machineStaffing: Record<string, number>;
-  setMachineStaffing: React.Dispatch<
-    React.SetStateAction<Record<string, number>>
-  >;
+  setMachineStaffing: Dispatch<SetStateAction<Record<string, number>>>;
   machineHours: Record<string, number>;
-  setMachineHours: React.Dispatch<
-    React.SetStateAction<Record<string, number>>
-  >;
+  setMachineHours: Dispatch<SetStateAction<Record<string, number>>>;
   selectedMachines: string[];
   formatMoney: (value: number) => string;
   inputClass: string;
@@ -44,13 +42,10 @@ export default function LabourSection({
           <div className="mb-1 text-xs text-slate-500">
             Hourly Rate (€)
           </div>
-
           <input
             type="number"
             value={hourlyRate}
-            onChange={(e) =>
-              setHourlyRate(Number(e.target.value) || 0)
-            }
+            onChange={(e) => setHourlyRate(Number(e.target.value) || 0)}
             className={inputClass}
           />
         </div>
@@ -59,36 +54,23 @@ export default function LabourSection({
           <div className="mb-1 text-xs text-slate-500">
             Operators
           </div>
-
           <input
             type="number"
             value={operatorAmount}
             onChange={(e) =>
-              setOperatorAmount(
-                Math.max(
-                  1,
-                  Number(e.target.value) || 1
-                )
-              )
+              setOperatorAmount(Math.max(1, Number(e.target.value) || 1))
             }
             className={inputClass}
           />
         </div>
 
         <div className="text-sm text-slate-600">
-          Labour total:{" "}
-          <strong>
-            {formatMoney(currentLabourTotal)}
-          </strong>
+          Labour total: <strong>{formatMoney(currentLabourTotal)}</strong>
         </div>
 
         <div className="text-sm text-slate-600">
           Labour/unit:{" "}
-          <strong>
-            {formatMoney(
-              getProductLabourCostPerUnit()
-            )}
-          </strong>
+          <strong>{formatMoney(getProductLabourCostPerUnit())}</strong>
         </div>
       </div>
 
@@ -114,8 +96,7 @@ export default function LabourSection({
               onChange={(e) =>
                 setMachineStaffing((prev) => ({
                   ...prev,
-                  [machine]:
-                    Number(e.target.value) || 0,
+                  [machine]: Number(e.target.value) || 0,
                 }))
               }
               className={inputClass}
@@ -128,8 +109,7 @@ export default function LabourSection({
               onChange={(e) =>
                 setMachineHours((prev) => ({
                   ...prev,
-                  [machine]:
-                    Number(e.target.value) || 0,
+                  [machine]: Number(e.target.value) || 0,
                 }))
               }
               className={inputClass}
