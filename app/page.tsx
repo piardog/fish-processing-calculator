@@ -8,6 +8,7 @@ import LabourSection from "@/components/LabourSection";
 import IngredientsSection from "@/components/IngredientsSection";
 import ExtraLabourSection from "@/components/ExtraLabourSection";
 import OtherCostsSection from "@/components/OtherCostsSection";
+import HelpTooltip from "@/components/HelpTooltip";
 
 type Product = {
   key: string;
@@ -719,9 +720,16 @@ export default function FishProductCalculatorBasic() {
           <div className={cardClass}>
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-semibold">Start Point</h2>
-              <button onClick={() => setShowAddSpecies((s) => !s)} className="rounded bg-slate-700 px-3 py-2 text-sm text-white">
-                {showAddSpecies ? "Hide" : "+ Add or Remove Species"}
-              </button>
+              <div className="flex items-center gap-2">
+  <button
+    onClick={() => setShowAddSpecies((s) => !s)}
+    className="rounded bg-slate-700 px-3 py-2 text-sm text-white"
+  >
+    {showAddSpecies ? "Hide" : "+ Add or Remove Species"}
+  </button>
+
+  <HelpTooltip text="Add a new fish species, or remove a species you no longer need. A species cannot be removed while products are still using it." />
+</div>
             </div>
             <div className="grid gap-3 md:grid-cols-2 mt-3">
               <div>
@@ -765,7 +773,11 @@ export default function FishProductCalculatorBasic() {
             </div>
             <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-4">
               <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-                <div className="text-sm font-semibold">Yield Settings</div>
+                <div className="flex items-center gap-2">
+  <div className="text-sm font-semibold">Yield Settings</div>
+
+  <HelpTooltip text="Use the example industry yields provided, or enter your own custom fillet, trim, and waste percentages based on your factory process." />
+</div>
                 <div className="flex gap-2 text-sm">
                   <button
                     onClick={() => setYieldMode("typical")}
@@ -901,9 +913,16 @@ export default function FishProductCalculatorBasic() {
           <div className={cardClass}>
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-semibold">Add Product</h2>
-              <button onClick={() => setShowAddProduct((s) => !s)} className="rounded bg-slate-700 px-3 py-2 text-sm text-white">
-                {showAddProduct ? "Hide" : "+ Add or Remove Product"}
-              </button>
+              <div className="flex items-center gap-2">
+  <button
+    onClick={() => setShowAddProduct((s) => !s)}
+    className="rounded bg-slate-700 px-3 py-2 text-sm text-white"
+  >
+    {showAddProduct ? "Hide" : "+ Add or Remove Product"}
+  </button>
+
+  <HelpTooltip text="Create new seafood products such as fish fingers, fish cakes, smoked products, fillets, or other processed products. Custom products can also be removed later." />
+</div>
             </div>
             {showAddProduct && (
               <div className="mt-4 space-y-3">
@@ -1084,7 +1103,11 @@ export default function FishProductCalculatorBasic() {
 
          <div className={cardClass}>
   <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-    <h2 className="text-lg font-semibold">Save & Compare</h2>
+    <div className="flex items-center gap-2">
+  <h2 className="text-lg font-semibold">Save & Compare</h2>
+
+  <HelpTooltip text="Save different production scenarios to compare fish species, products, costs, margins, break-even pricing, and estimated profitability side-by-side." />
+</div>
 
     <div className="flex flex-wrap gap-2">
       <button
