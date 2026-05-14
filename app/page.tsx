@@ -65,8 +65,7 @@ export default function FishProductCalculatorBasic() {
   const [fishProfiles, setFishProfiles] = useState<Record<string, { label: string; filletPct: number; trimPct: number; fishCostPerKg: number }>>({
     haddock: { label: "Haddock", filletPct: 42, trimPct: 18, fishCostPerKg: 4 },
     herring: { label: "Herring", filletPct: 50, trimPct: 8, fishCostPerKg: 2.4 },
-    monkfish: { label: "Monkfish", filletPct: 38, trimPct: 12, fishCostPerKg: 9 },
-    prawns: { label: "Prawns", filletPct: 30, trimPct: 10, fishCostPerKg: 7 },
+    
   });
 
   const [newFish, setNewFish] = useState({
@@ -968,6 +967,12 @@ export default function FishProductCalculatorBasic() {
                   Save Product
                 </button>
               </div>
+			  
+			  
+			  
+			  
+			  
+			  
             )}
           </div>
 
