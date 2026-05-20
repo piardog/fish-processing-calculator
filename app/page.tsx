@@ -1017,7 +1017,7 @@ export default function FishProductCalculatorBasic() {
     </button>
   )}
 </div>
-                  <div className="text-sm text-slate-500">{selectedProductData.note}</div>
+                 
                 </div>
 
                 <div className="text-sm text-slate-600">
